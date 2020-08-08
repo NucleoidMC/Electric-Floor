@@ -2,28 +2,29 @@ package io.github.haykam821.electricfloor.game.phase;
 
 import java.util.Iterator;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.github.haykam821.electricfloor.Main;
 import io.github.haykam821.electricfloor.game.ElectricFloorConfig;
+import io.github.haykam821.electricfloor.game.map.ElectricFloorMap;
 import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.longs.Long2IntMaps;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import net.gegy1000.plasmid.game.Game;
+import net.gegy1000.plasmid.game.GameWorld;
 import net.gegy1000.plasmid.game.event.GameOpenListener;
 import net.gegy1000.plasmid.game.event.GameTickListener;
 import net.gegy1000.plasmid.game.event.PlayerAddListener;
 import net.gegy1000.plasmid.game.event.PlayerDeathListener;
-import net.gegy1000.plasmid.game.event.PlayerRejoinListener;
-import net.gegy1000.plasmid.game.map.GameMap;
 import net.gegy1000.plasmid.game.rule.GameRule;
 import net.gegy1000.plasmid.game.rule.RuleResult;
 import net.gegy1000.plasmid.util.PlayerRef;
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -32,53 +33,59 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameMode;
 
 public class ElectricFloorActivePhase {
+	private final ServerWorld world;
+	private final GameWorld gameWorld;
+	private final ElectricFloorMap map;
 	private final ElectricFloorConfig config;
 	private final Set<PlayerRef> players;
 	private boolean singleplayer;
 	private final Long2IntMap convertPositions = new Long2IntOpenHashMap();
+	private boolean opened;
 
-	public ElectricFloorActivePhase(ElectricFloorConfig config, Set<PlayerRef> players) {
+	public ElectricFloorActivePhase(GameWorld gameWorld, ElectricFloorMap map, ElectricFloorConfig config, Set<PlayerRef> players) {
+		this.world = gameWorld.getWorld();
+		this.gameWorld = gameWorld;
+		this.map = map;
 		this.config = config;
 		this.players = players;
 	}
 
-	public static void setRules(Game.Builder builder) {
-		builder.setRule(GameRule.ALLOW_CRAFTING, RuleResult.DENY);
-		builder.setRule(GameRule.ALLOW_PORTALS, RuleResult.DENY);
-		builder.setRule(GameRule.ALLOW_PVP, RuleResult.DENY);
-		builder.setRule(GameRule.FALL_DAMAGE, RuleResult.DENY);
-		builder.setRule(GameRule.ENABLE_HUNGER, RuleResult.DENY);
+	public static void setRules(Game game) {
+		game.setRule(GameRule.ALLOW_CRAFTING, RuleResult.DENY);
+		game.setRule(GameRule.ALLOW_PORTALS, RuleResult.DENY);
+		game.setRule(GameRule.ALLOW_PVP, RuleResult.DENY);
+		game.setRule(GameRule.FALL_DAMAGE, RuleResult.DENY);
+		game.setRule(GameRule.ENABLE_HUNGER, RuleResult.DENY);
 	}
 
-	public static Game open(GameMap map, ElectricFloorConfig config, Set<PlayerRef> players) {
-		ElectricFloorActivePhase game = new ElectricFloorActivePhase(config, players);
+	public static void open(GameWorld gameWorld, ElectricFloorMap map, ElectricFloorConfig config) {
+		Set<PlayerRef> players = gameWorld.getPlayers().stream().map(PlayerRef::of).collect(Collectors.toSet());
+		ElectricFloorActivePhase phase = new ElectricFloorActivePhase(gameWorld, map, config, players);
 
-		Game.Builder builder = Game.builder();
-		builder.setMap(map);
+		gameWorld.newGame(game -> {
+			ElectricFloorActivePhase.setRules(game);
 
-		ElectricFloorActivePhase.setRules(builder);
-
-		// Listeners
-		builder.on(GameOpenListener.EVENT, game::open);
-		builder.on(GameTickListener.EVENT, game::tick);
-		builder.on(PlayerAddListener.EVENT, game::addPlayer);
-		builder.on(PlayerDeathListener.EVENT, game::onPlayerDeath);
-		builder.on(PlayerRejoinListener.EVENT, game::rejoinPlayer);
-
-		return builder.build();
+			// Listeners
+			game.on(GameOpenListener.EVENT, phase::open);
+			game.on(GameTickListener.EVENT, phase::tick);
+			game.on(PlayerAddListener.EVENT, phase::addPlayer);
+			game.on(PlayerDeathListener.EVENT, phase::onPlayerDeath);
+		});
 	}
 
-	public void open(Game game) {
+	public void open() {
+		this.opened = true;
 		this.singleplayer = this.players.size() == 1;
+
  		for (PlayerRef playerRef : this.players) {
-			playerRef.ifOnline(game.getWorld(), player -> {
+			playerRef.ifOnline(this.world, player -> {
 				player.setGameMode(GameMode.ADVENTURE);
-				ElectricFloorActivePhase.spawn(game.getMap(), player);
+				ElectricFloorActivePhase.spawn(this.world, this.map, player);
 			});
 		}
 	}
 
-	public void tick(Game game) {
+	public void tick() {
 		BlockPos.Mutable pos = new BlockPos.Mutable();
 
  		ObjectIterator<Long2IntMap.Entry> iterator = Long2IntMaps.fastIterator(this.convertPositions);
@@ -90,8 +97,8 @@ public class ElectricFloorActivePhase {
 			if (ticksLeft == 0) {
 				pos.set(convertPos);
 		
-				BlockState state = game.getWorld().getBlockState(pos);
-				game.getWorld().setBlockState(pos, Main.getConvertedFloor(state));
+				BlockState state = this.world.getBlockState(pos);
+				this.world.setBlockState(pos, Main.getConvertedFloor(state));
 
 				iterator.remove();
 			} else {
@@ -102,14 +109,14 @@ public class ElectricFloorActivePhase {
 		Iterator<PlayerRef> playerIterator = this.players.iterator();
 		while (playerIterator.hasNext()) {
 			PlayerRef playerRef = playerIterator.next();
-			playerRef.ifOnline(game.getWorld(), player -> {
+			playerRef.ifOnline(this.world, player -> {
 				BlockPos landingPos = player.getLandingPos();
-				BlockState state = game.getWorld().getBlockState(landingPos);
+				BlockState state = this.world.getBlockState(landingPos);
 
 				if (Main.isConvertible(state)) {
 					BlockState convertedState = Main.getConvertedFloor(state);
 					if (convertedState == null) {
-						this.eliminate(game, player, false);
+						this.eliminate(player, false);
 						playerIterator.remove();
 					} else {
 						this.convertPositions.putIfAbsent(landingPos.asLong(), this.config.getDelay());
@@ -121,20 +128,20 @@ public class ElectricFloorActivePhase {
 		if (this.players.size() < 2) {
 			if (this.players.size() == 1 && this.singleplayer) return;
 			
-			Text endingMessage = this.getEndingMessage(game);
-			game.onlinePlayers().forEach(player -> {
+			Text endingMessage = this.getEndingMessage();
+			for (ServerPlayerEntity player : this.gameWorld.getPlayers()) {
 				player.sendMessage(endingMessage, false);
-			});
+			}
 
-			game.close();
+			this.gameWorld.closeWorld();
 		}
 	}
 
-	private Text getEndingMessage(Game game) {
+	private Text getEndingMessage() {
 		if (this.players.size() == 1) {
 			PlayerRef winnerRef = this.players.iterator().next();
-			if (winnerRef.isOnline(game.getWorld())) {
-				PlayerEntity winner = winnerRef.getEntity(game.getWorld());
+			if (winnerRef.isOnline(this.world)) {
+				PlayerEntity winner = winnerRef.getEntity(this.world);
 				return winner.getDisplayName().shallowCopy().append(" has won the game!").formatted(Formatting.GOLD);
 			}
 		}
@@ -145,17 +152,19 @@ public class ElectricFloorActivePhase {
 		player.setGameMode(GameMode.SPECTATOR);
 	}
 
-	public void addPlayer(Game game, PlayerEntity player) {
+	public void addPlayer(PlayerEntity player) {
 		if (!this.players.contains(PlayerRef.of(player))) {
 			this.setSpectator(player);
+		} else if (this.opened) {
+			this.eliminate(player, true);
 		}
 	}
 
-	public void eliminate(Game game, PlayerEntity eliminatedPlayer, boolean remove) {
+	public void eliminate(PlayerEntity eliminatedPlayer, boolean remove) {
 		Text message = eliminatedPlayer.getDisplayName().shallowCopy().append(" has been eliminated!").formatted(Formatting.RED);
-		game.onlinePlayers().forEach(player -> {
+		for (ServerPlayerEntity player : this.gameWorld.getPlayers()) {
 			player.sendMessage(message, false);
-		});
+		}
 
 		if (remove) {
 			this.players.remove(PlayerRef.of(eliminatedPlayer));
@@ -163,17 +172,17 @@ public class ElectricFloorActivePhase {
 		this.setSpectator(eliminatedPlayer);
 	}
 
-	public boolean onPlayerDeath(Game game, PlayerEntity player, DamageSource source) {
-		this.eliminate(game, player, true);
+	public boolean onPlayerDeath(PlayerEntity player, DamageSource source) {
+		this.eliminate(player, true);
 		return true;
 	}
 
-	public void rejoinPlayer(Game game, PlayerEntity player) {
-		this.eliminate(game, player, true);
+	public void rejoinPlayer(PlayerEntity player) {
+		this.eliminate(player, true);
 	}
 
-	public static void spawn(GameMap map, ServerPlayerEntity player) {
-		Vec3d center = map.getFirstRegion("platform").getCenter();
-		player.teleport(map.getWorld(), center.getX(), center.getY() + 0.5, center.getZ(), 0, 0);
+	public static void spawn(ServerWorld world, ElectricFloorMap map, ServerPlayerEntity player) {
+		Vec3d center = map.getPlatform().getCenter();
+		player.teleport(world, center.getX(), center.getY() + 0.5, center.getZ(), 0, 0);
 	}
 }

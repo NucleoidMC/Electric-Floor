@@ -1,67 +1,77 @@
 package io.github.haykam821.electricfloor.game.phase;
 
+import java.util.concurrent.CompletableFuture;
+
 import io.github.haykam821.electricfloor.game.ElectricFloorConfig;
-import net.gegy1000.plasmid.game.Game;
-import net.gegy1000.plasmid.game.JoinResult;
+import io.github.haykam821.electricfloor.game.map.ElectricFloorMap;
+import io.github.haykam821.electricfloor.game.map.ElectricFloorMapBuilder;
+import net.gegy1000.plasmid.game.GameWorld;
+import net.gegy1000.plasmid.game.GameWorldState;
 import net.gegy1000.plasmid.game.StartResult;
 import net.gegy1000.plasmid.game.config.PlayerConfig;
 import net.gegy1000.plasmid.game.event.OfferPlayerListener;
 import net.gegy1000.plasmid.game.event.PlayerAddListener;
 import net.gegy1000.plasmid.game.event.PlayerDeathListener;
 import net.gegy1000.plasmid.game.event.RequestStartListener;
-import net.gegy1000.plasmid.game.map.GameMap;
+import net.gegy1000.plasmid.game.player.JoinResult;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 public class ElectricFloorWaitingPhase {
+	private final GameWorld gameWorld;
+	private final ElectricFloorMap map;
 	private final ElectricFloorConfig config;
 
-	public ElectricFloorWaitingPhase(GameMap map, ElectricFloorConfig config) {
+	public ElectricFloorWaitingPhase(GameWorld gameWorld, ElectricFloorMap map, ElectricFloorConfig config) {
+		this.gameWorld = gameWorld;
+		this.map = map;
 		this.config = config;
 	}
 
-	public static Game open(GameMap map, ElectricFloorConfig config) {
-		ElectricFloorWaitingPhase game = new ElectricFloorWaitingPhase(map, config);
+	public static CompletableFuture<Void> open(GameWorldState gameState, ElectricFloorConfig config) {
+		ElectricFloorMapBuilder mapBuilder = new ElectricFloorMapBuilder(config);
 
-		Game.Builder builder = Game.builder();
-		builder.setMap(map);
+		return mapBuilder.create().thenAccept(map -> {
+			GameWorld gameWorld = gameState.openWorld(map.createGenerator());
+			ElectricFloorWaitingPhase phase = new ElectricFloorWaitingPhase(gameWorld, map, config);
 
-		ElectricFloorActivePhase.setRules(builder);
+			gameWorld.newGame(game -> {
+				ElectricFloorActivePhase.setRules(game);
 
-		// Listeners
-		builder.on(PlayerAddListener.EVENT, game::addPlayer);
-		builder.on(PlayerDeathListener.EVENT, game::onPlayerDeath);
-		builder.on(OfferPlayerListener.EVENT, game::offerPlayer);
-		builder.on(RequestStartListener.EVENT, game::requestStart);
-
-		return builder.build();
+				// Listeners
+				game.on(PlayerAddListener.EVENT, phase::addPlayer);
+				game.on(PlayerDeathListener.EVENT, phase::onPlayerDeath);
+				game.on(OfferPlayerListener.EVENT, phase::offerPlayer);
+				game.on(RequestStartListener.EVENT, phase::requestStart);
+			});
+		});
 	}
 
-	private boolean isFull(Game game) {
-		return game.getPlayerCount() >= this.config.getPlayerConfig().getMaxPlayers();
+	private boolean isFull() {
+		return this.gameWorld.getPlayerCount() >= this.config.getPlayerConfig().getMaxPlayers();
 	}
 
-	public JoinResult offerPlayer(Game game, ServerPlayerEntity player) {
-		return this.isFull(game) ? JoinResult.gameFull() : JoinResult.ok();
+	public JoinResult offerPlayer(ServerPlayerEntity player) {
+		return this.isFull() ? JoinResult.gameFull() : JoinResult.ok();
 	}
 
-	public StartResult requestStart(Game game) {
+	public StartResult requestStart() {
 		PlayerConfig playerConfig = this.config.getPlayerConfig();
-		if (game.getPlayerCount() < playerConfig.getMinPlayers()) {
+		if (this.gameWorld.getPlayerCount() < playerConfig.getMinPlayers()) {
 			return StartResult.notEnoughPlayers();
 		}
 
-		Game activeGame = ElectricFloorActivePhase.open(game.getMap(), this.config, game.getPlayers());
-		return StartResult.ok(activeGame);
+		ElectricFloorActivePhase.open(this.gameWorld, this.map, this.config);
+		return StartResult.ok();
 	}
 
-	public void addPlayer(Game game, ServerPlayerEntity player) {
-		ElectricFloorActivePhase.spawn(game.getMap(), player);
+	public void addPlayer(ServerPlayerEntity player) {
+		ElectricFloorActivePhase.spawn(this.gameWorld.getWorld(), this.map, player);
 	}
 
-	public boolean onPlayerDeath(Game game, ServerPlayerEntity player, DamageSource source) {
+	public boolean onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
 		// Respawn player at the start
-		ElectricFloorActivePhase.spawn(game.getMap(), player);
+		ElectricFloorActivePhase.spawn(this.gameWorld.getWorld(), this.map, player);
 		return true;
 	}
 }
