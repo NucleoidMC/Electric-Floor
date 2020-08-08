@@ -1,0 +1,25 @@
+{
+	"schemaVersion": 1,
+	"id": "electricfloor",
+	"version": "${version}",
+	"name": "Electric Floor",
+	"description": "A floor avoidance minigame for Minecraft.",
+	"authors": [
+		"haykam821"
+	],
+	"contact": {
+		"homepage": "https://github.com/haykam821/Electric-Floor#readme",
+		"issues": "https://github.com/haykam821/Electric-Floor/issues"
+	},
+	"entrypoints": {
+		"main": [
+			"io.github.haykam821.electricfloor.Main"
+		]
+	},
+	"accessWidener": "electricfloor.accesswidener",
+	"license": "MIT",
+	"icon": "assets/electricfloor/icon.png",
+	"depends": {
+		"fabricloader": ">=0.4.0"
+	}
+}
