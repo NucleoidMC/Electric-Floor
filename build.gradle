@@ -16,8 +16,8 @@ repositories {
 		url = "https://maven.fabricmc.net/"
 	}
 	maven {
-		name = "Gegy1000"
-		url = "https://maven.gegy1000.net/"
+		name = "Gegy"
+		url = "https://maven.gegy.dev/"
 	}
 	jcenter()
 }
@@ -36,7 +36,7 @@ dependencies {
 	modImplementation("net.fabricmc.fabric-api:fabric-api:${project.fabric_version}")
 
 	// Plasmid
-	modImplementation("net.gegy1000:plasmid:${project.plasmid_version}")
+	modImplementation("xyz.nucleoid:plasmid:${project.plasmid_version}")
 }
 
 processResources {

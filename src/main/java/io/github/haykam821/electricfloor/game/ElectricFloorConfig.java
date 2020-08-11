@@ -4,10 +4,9 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import io.github.haykam821.electricfloor.game.map.ElectricFloorMapConfig;
-import net.gegy1000.plasmid.game.config.GameConfig;
-import net.gegy1000.plasmid.game.config.PlayerConfig;
+import xyz.nucleoid.plasmid.game.config.PlayerConfig;
 
-public class ElectricFloorConfig implements GameConfig {
+public class ElectricFloorConfig {
 	public static final Codec<ElectricFloorConfig> CODEC = RecordCodecBuilder.create(instance -> {
 		return instance.group(
 			ElectricFloorMapConfig.CODEC.fieldOf("map").forGetter(ElectricFloorConfig::getMapConfig),

@@ -6,11 +6,11 @@ import java.util.Map;
 import io.github.haykam821.electricfloor.game.ElectricFloorConfig;
 import io.github.haykam821.electricfloor.game.phase.ElectricFloorWaitingPhase;
 import net.fabricmc.api.ModInitializer;
-import net.gegy1000.plasmid.game.GameType;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.util.Identifier;
+import xyz.nucleoid.plasmid.game.GameType;
 
 public class Main implements ModInitializer {
 	public static final String MOD_ID = "electricfloor";

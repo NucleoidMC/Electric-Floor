@@ -5,17 +5,19 @@ import java.util.concurrent.CompletableFuture;
 import io.github.haykam821.electricfloor.game.ElectricFloorConfig;
 import io.github.haykam821.electricfloor.game.map.ElectricFloorMap;
 import io.github.haykam821.electricfloor.game.map.ElectricFloorMapBuilder;
-import net.gegy1000.plasmid.game.GameWorld;
-import net.gegy1000.plasmid.game.GameWorldState;
-import net.gegy1000.plasmid.game.StartResult;
-import net.gegy1000.plasmid.game.config.PlayerConfig;
-import net.gegy1000.plasmid.game.event.OfferPlayerListener;
-import net.gegy1000.plasmid.game.event.PlayerAddListener;
-import net.gegy1000.plasmid.game.event.PlayerDeathListener;
-import net.gegy1000.plasmid.game.event.RequestStartListener;
-import net.gegy1000.plasmid.game.player.JoinResult;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.world.GameMode;
+import xyz.nucleoid.plasmid.game.GameWorld;
+import xyz.nucleoid.plasmid.game.StartResult;
+import xyz.nucleoid.plasmid.game.config.PlayerConfig;
+import xyz.nucleoid.plasmid.game.event.OfferPlayerListener;
+import xyz.nucleoid.plasmid.game.event.PlayerAddListener;
+import xyz.nucleoid.plasmid.game.event.PlayerDeathListener;
+import xyz.nucleoid.plasmid.game.event.RequestStartListener;
+import xyz.nucleoid.plasmid.game.player.JoinResult;
+import xyz.nucleoid.plasmid.game.world.bubble.BubbleWorldConfig;
 
 public class ElectricFloorWaitingPhase {
 	private final GameWorld gameWorld;
@@ -28,11 +30,15 @@ public class ElectricFloorWaitingPhase {
 		this.config = config;
 	}
 
-	public static CompletableFuture<Void> open(GameWorldState gameState, ElectricFloorConfig config) {
+	public static CompletableFuture<Void> open(MinecraftServer server, ElectricFloorConfig config) {
 		ElectricFloorMapBuilder mapBuilder = new ElectricFloorMapBuilder(config);
 
 		return mapBuilder.create().thenAccept(map -> {
-			GameWorld gameWorld = gameState.openWorld(map.createGenerator());
+			BubbleWorldConfig worldConfig = new BubbleWorldConfig()
+				.setGenerator(map.createGenerator())
+				.setDefaultGameMode(GameMode.SPECTATOR);
+			GameWorld gameWorld = GameWorld.open(server, worldConfig);
+
 			ElectricFloorWaitingPhase phase = new ElectricFloorWaitingPhase(gameWorld, map, config);
 
 			gameWorld.newGame(game -> {

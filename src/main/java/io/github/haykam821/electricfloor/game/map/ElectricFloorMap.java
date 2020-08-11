@@ -1,10 +1,10 @@
 package io.github.haykam821.electricfloor.game.map;
 
-import net.gegy1000.plasmid.game.map.template.MapTemplate;
-import net.gegy1000.plasmid.game.map.template.TemplateChunkGenerator;
-import net.gegy1000.plasmid.util.BlockBounds;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
+import xyz.nucleoid.plasmid.game.map.template.MapTemplate;
+import xyz.nucleoid.plasmid.game.map.template.TemplateChunkGenerator;
+import xyz.nucleoid.plasmid.util.BlockBounds;
 
 public class ElectricFloorMap {
 	private final MapTemplate template;

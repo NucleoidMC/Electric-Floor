@@ -3,12 +3,12 @@ package io.github.haykam821.electricfloor.game.map;
 import java.util.concurrent.CompletableFuture;
 
 import io.github.haykam821.electricfloor.game.ElectricFloorConfig;
-import net.gegy1000.plasmid.game.map.template.MapTemplate;
-import net.gegy1000.plasmid.util.BlockBounds;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
+import xyz.nucleoid.plasmid.game.map.template.MapTemplate;
+import xyz.nucleoid.plasmid.util.BlockBounds;
 
 public class ElectricFloorMapBuilder {
 	private static final BlockState FLOOR = Blocks.WHITE_STAINED_GLASS.getDefaultState();
