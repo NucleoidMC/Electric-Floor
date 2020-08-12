@@ -111,6 +111,11 @@ public class ElectricFloorActivePhase {
 		while (playerIterator.hasNext()) {
 			PlayerRef playerRef = playerIterator.next();
 			playerRef.ifOnline(this.world, player -> {
+				if (!this.map.getBox().contains(player.getPos())) {
+					this.eliminate(player, false);
+					playerIterator.remove();
+				}
+
 				BlockPos landingPos = player.getLandingPos();
 				BlockState state = this.world.getBlockState(landingPos);
 
