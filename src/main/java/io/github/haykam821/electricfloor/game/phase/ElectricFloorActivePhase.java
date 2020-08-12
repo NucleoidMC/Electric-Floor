@@ -18,6 +18,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -51,18 +52,18 @@ public class ElectricFloorActivePhase {
 	}
 
 	public static void setRules(Game game) {
-		game.setRule(GameRule.ALLOW_CRAFTING, RuleResult.DENY);
-		game.setRule(GameRule.ALLOW_PORTALS, RuleResult.DENY);
-		game.setRule(GameRule.ALLOW_PVP, RuleResult.DENY);
+		game.setRule(GameRule.CRAFTING, RuleResult.DENY);
 		game.setRule(GameRule.FALL_DAMAGE, RuleResult.DENY);
-		game.setRule(GameRule.ENABLE_HUNGER, RuleResult.DENY);
+		game.setRule(GameRule.HUNGER, RuleResult.DENY);
+		game.setRule(GameRule.PORTALS, RuleResult.DENY);
+		game.setRule(GameRule.PVP, RuleResult.DENY);
 	}
 
 	public static void open(GameWorld gameWorld, ElectricFloorMap map, ElectricFloorConfig config) {
 		Set<PlayerRef> players = gameWorld.getPlayers().stream().map(PlayerRef::of).collect(Collectors.toSet());
 		ElectricFloorActivePhase phase = new ElectricFloorActivePhase(gameWorld, map, config, players);
 
-		gameWorld.newGame(game -> {
+		gameWorld.openGame(game -> {
 			ElectricFloorActivePhase.setRules(game);
 
 			// Listeners
@@ -133,7 +134,7 @@ public class ElectricFloorActivePhase {
 				player.sendMessage(endingMessage, false);
 			}
 
-			this.gameWorld.closeWorld();
+			this.gameWorld.close();
 		}
 	}
 
@@ -172,9 +173,9 @@ public class ElectricFloorActivePhase {
 		this.setSpectator(eliminatedPlayer);
 	}
 
-	public boolean onPlayerDeath(PlayerEntity player, DamageSource source) {
+	public ActionResult onPlayerDeath(PlayerEntity player, DamageSource source) {
 		this.eliminate(player, true);
-		return true;
+		return ActionResult.SUCCESS;
 	}
 
 	public void rejoinPlayer(PlayerEntity player) {

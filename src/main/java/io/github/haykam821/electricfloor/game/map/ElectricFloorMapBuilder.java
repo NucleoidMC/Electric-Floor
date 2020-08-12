@@ -31,7 +31,7 @@ public class ElectricFloorMapBuilder {
 			this.build(bounds, template, mapConfig);
 
 			return new ElectricFloorMap(template, bounds);
-		}, Util.getServerWorkerExecutor());
+		}, Util.getMainWorkerExecutor());
 	}
 
 	private BlockState getBlockState(BlockPos pos, BlockBounds bounds, ElectricFloorMapConfig mapConfig) {

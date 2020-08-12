@@ -1,5 +1,6 @@
 package io.github.haykam821.electricfloor.game.map;
 
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import xyz.nucleoid.plasmid.game.map.template.MapTemplate;
@@ -19,7 +20,7 @@ public class ElectricFloorMap {
 		return this.platform;
 	}
 
-	public ChunkGenerator createGenerator() {
-		return new TemplateChunkGenerator(this.template, BlockPos.ORIGIN);
+	public ChunkGenerator createGenerator(MinecraftServer server) {
+		return new TemplateChunkGenerator(server, this.template, BlockPos.ORIGIN);
 	}
 }

@@ -8,6 +8,7 @@ import io.github.haykam821.electricfloor.game.map.ElectricFloorMapBuilder;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.ActionResult;
 import net.minecraft.world.GameMode;
 import xyz.nucleoid.plasmid.game.GameWorld;
 import xyz.nucleoid.plasmid.game.StartResult;
@@ -35,13 +36,13 @@ public class ElectricFloorWaitingPhase {
 
 		return mapBuilder.create().thenAccept(map -> {
 			BubbleWorldConfig worldConfig = new BubbleWorldConfig()
-				.setGenerator(map.createGenerator())
-				.setDefaultGameMode(GameMode.SPECTATOR);
+				.setGenerator(map.createGenerator(server))
+				.setDefaultGameMode(GameMode.ADVENTURE);
 			GameWorld gameWorld = GameWorld.open(server, worldConfig);
 
 			ElectricFloorWaitingPhase phase = new ElectricFloorWaitingPhase(gameWorld, map, config);
 
-			gameWorld.newGame(game -> {
+			gameWorld.openGame(game -> {
 				ElectricFloorActivePhase.setRules(game);
 
 				// Listeners
@@ -75,9 +76,9 @@ public class ElectricFloorWaitingPhase {
 		ElectricFloorActivePhase.spawn(this.gameWorld.getWorld(), this.map, player);
 	}
 
-	public boolean onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
+	public ActionResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
 		// Respawn player at the start
 		ElectricFloorActivePhase.spawn(this.gameWorld.getWorld(), this.map, player);
-		return true;
+		return ActionResult.SUCCESS;
 	}
 }
