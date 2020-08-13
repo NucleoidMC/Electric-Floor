@@ -6,10 +6,10 @@ import io.github.haykam821.electricfloor.game.ElectricFloorConfig;
 import io.github.haykam821.electricfloor.game.map.ElectricFloorMap;
 import io.github.haykam821.electricfloor.game.map.ElectricFloorMapBuilder;
 import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.ActionResult;
 import net.minecraft.world.GameMode;
+import xyz.nucleoid.plasmid.game.GameOpenContext;
 import xyz.nucleoid.plasmid.game.GameWorld;
 import xyz.nucleoid.plasmid.game.StartResult;
 import xyz.nucleoid.plasmid.game.config.PlayerConfig;
@@ -31,16 +31,16 @@ public class ElectricFloorWaitingPhase {
 		this.config = config;
 	}
 
-	public static CompletableFuture<Void> open(MinecraftServer server, ElectricFloorConfig config) {
-		ElectricFloorMapBuilder mapBuilder = new ElectricFloorMapBuilder(config);
+	public static CompletableFuture<Void> open(GameOpenContext<ElectricFloorConfig> context) {
+		ElectricFloorMapBuilder mapBuilder = new ElectricFloorMapBuilder(context.getConfig());
 
 		return mapBuilder.create().thenAccept(map -> {
 			BubbleWorldConfig worldConfig = new BubbleWorldConfig()
-				.setGenerator(map.createGenerator(server))
+				.setGenerator(map.createGenerator(context.getServer()))
 				.setDefaultGameMode(GameMode.ADVENTURE);
-			GameWorld gameWorld = GameWorld.open(server, worldConfig);
+			GameWorld gameWorld = context.openWorld(worldConfig);
 
-			ElectricFloorWaitingPhase phase = new ElectricFloorWaitingPhase(gameWorld, map, config);
+			ElectricFloorWaitingPhase phase = new ElectricFloorWaitingPhase(gameWorld, map, context.getConfig());
 
 			gameWorld.openGame(game -> {
 				ElectricFloorActivePhase.setRules(game);
