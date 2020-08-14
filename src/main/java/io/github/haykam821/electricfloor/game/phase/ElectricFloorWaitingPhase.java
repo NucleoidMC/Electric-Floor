@@ -1,13 +1,12 @@
 package io.github.haykam821.electricfloor.game.phase;
 
-import java.util.concurrent.CompletableFuture;
-
 import io.github.haykam821.electricfloor.game.ElectricFloorConfig;
 import io.github.haykam821.electricfloor.game.map.ElectricFloorMap;
 import io.github.haykam821.electricfloor.game.map.ElectricFloorMapBuilder;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameMode;
 import xyz.nucleoid.plasmid.game.GameOpenContext;
 import xyz.nucleoid.plasmid.game.GameWorld;
@@ -19,6 +18,8 @@ import xyz.nucleoid.plasmid.game.event.PlayerDeathListener;
 import xyz.nucleoid.plasmid.game.event.RequestStartListener;
 import xyz.nucleoid.plasmid.game.player.JoinResult;
 import xyz.nucleoid.plasmid.game.world.bubble.BubbleWorldConfig;
+
+import java.util.concurrent.CompletableFuture;
 
 public class ElectricFloorWaitingPhase {
 	private final GameWorld gameWorld;
@@ -73,12 +74,17 @@ public class ElectricFloorWaitingPhase {
 	}
 
 	public void addPlayer(ServerPlayerEntity player) {
-		ElectricFloorActivePhase.spawn(this.gameWorld.getWorld(), this.map, player);
+		this.spawnPlayer(player);
 	}
 
 	public ActionResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
 		// Respawn player at the start
-		ElectricFloorActivePhase.spawn(this.gameWorld.getWorld(), this.map, player);
+		this.spawnPlayer(player);
 		return ActionResult.SUCCESS;
+	}
+
+	private void spawnPlayer(ServerPlayerEntity player) {
+		Vec3d center = this.map.getPlatform().getCenter();
+		player.teleport(this.gameWorld.getWorld(), center.getX(), center.getY() + 0.5, center.getZ(), 0, 0);
 	}
 }
