@@ -143,10 +143,7 @@ public class ElectricFloorActivePhase {
 		if (this.players.size() < 2) {
 			if (this.players.size() == 1 && this.singleplayer) return;
 			
-			Text endingMessage = this.getEndingMessage();
-			for (ServerPlayerEntity player : this.gameWorld.getPlayers()) {
-				player.sendMessage(endingMessage, false);
-			}
+			this.gameWorld.getPlayerSet().sendMessage(this.getEndingMessage());
 
 			this.gameWorld.close();
 		}
