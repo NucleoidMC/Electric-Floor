@@ -1,13 +1,10 @@
 package io.github.haykam821.electricfloor.game.map;
 
-import java.util.concurrent.CompletableFuture;
-
 import io.github.haykam821.electricfloor.game.ElectricFloorConfig;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
-import xyz.nucleoid.plasmid.game.map.template.MapTemplate;
+import xyz.nucleoid.plasmid.map.template.MapTemplate;
 import xyz.nucleoid.plasmid.util.BlockBounds;
 
 public class ElectricFloorMapBuilder {
@@ -22,16 +19,14 @@ public class ElectricFloorMapBuilder {
 		this.config = config;
 	}
 
-	public CompletableFuture<ElectricFloorMap> create() {
-		return CompletableFuture.supplyAsync(() -> {
-			MapTemplate template = MapTemplate.createEmpty();
-			ElectricFloorMapConfig mapConfig = this.config.getMapConfig();
+	public ElectricFloorMap create() {
+		MapTemplate template = MapTemplate.createEmpty();
+		ElectricFloorMapConfig mapConfig = this.config.getMapConfig();
 
-			BlockBounds bounds = new BlockBounds(BlockPos.ORIGIN, new BlockPos(mapConfig.x + 1, 2, mapConfig.z + 1));
-			this.build(bounds, template, mapConfig);
+		BlockBounds bounds = new BlockBounds(BlockPos.ORIGIN, new BlockPos(mapConfig.x + 1, 2, mapConfig.z + 1));
+		this.build(bounds, template, mapConfig);
 
-			return new ElectricFloorMap(template, bounds);
-		}, Util.getMainWorkerExecutor());
+		return new ElectricFloorMap(template, bounds);
 	}
 
 	private BlockState getBlockState(BlockPos pos, BlockBounds bounds, ElectricFloorMapConfig mapConfig) {
@@ -54,7 +49,7 @@ public class ElectricFloorMapBuilder {
 	}
 
 	public void build(BlockBounds bounds, MapTemplate template, ElectricFloorMapConfig mapConfig) {
-		for (BlockPos pos : bounds.iterate()) {
+		for (BlockPos pos : bounds) {
 			BlockState state = this.getBlockState(pos, bounds, mapConfig);
 			if (state != null) {
 				template.setBlockState(pos, state);

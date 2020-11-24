@@ -1,5 +1,6 @@
 {
 	"type": "electricfloor:electric_floor",
+	"name": "Electric Floor",
 	"map": {
 		"x": 36,
 		"z": 36
