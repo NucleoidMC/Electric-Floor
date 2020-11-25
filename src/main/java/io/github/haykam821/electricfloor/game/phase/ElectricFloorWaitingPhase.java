@@ -67,6 +67,6 @@ public class ElectricFloorWaitingPhase {
 
 	private void spawnPlayer(ServerPlayerEntity player) {
 		Vec3d center = this.map.getPlatform().getCenter();
-		player.teleport(this.gameSpace.getWorld(), center.getX(), center.getY() + 0.5, center.getZ(), 0, 0);
+		player.teleport(this.gameSpace.getWorld(), center.getX(), 1, center.getZ(), 0, 0);
 	}
 }

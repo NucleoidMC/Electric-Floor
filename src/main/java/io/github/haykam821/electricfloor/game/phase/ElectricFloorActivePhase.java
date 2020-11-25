@@ -84,16 +84,15 @@ public class ElectricFloorActivePhase {
 
 		Vec3d center = this.map.getPlatform().getCenter();
 
-		int i = 0;
+		int index = 0;
  		for (ServerPlayerEntity player : this.players) {
 			player.setGameMode(GameMode.ADVENTURE);
 
-			double theta = ((double) i++ / this.players.size()) * 2 * Math.PI;
+			double theta = ((double) index++ / this.players.size()) * 2 * Math.PI;
 			double x = center.getX() + Math.sin(theta) * spawnRadius;
 			double z = center.getZ() + Math.cos(theta) * spawnRadius;
-			double y = center.getY() + 0.5;
 
-			player.teleport(this.gameSpace.getWorld(), x, y, z, 0, 0);
+			player.teleport(this.gameSpace.getWorld(), x, 1, z, (float) theta - 180, 0);
 		}
 	}
 
