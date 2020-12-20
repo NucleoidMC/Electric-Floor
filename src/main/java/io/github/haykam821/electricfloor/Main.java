@@ -15,6 +15,7 @@ import xyz.nucleoid.plasmid.game.GameType;
 public class Main implements ModInitializer {
 	public static final String MOD_ID = "electricfloor";
 
+	public static final Block SPAWN_PLATFORM = Blocks.RED_TERRACOTTA;
 	public static final Map<Block, Block> FLOOR_CONVERSIONS = new HashMap<>();
 
 	private static final Identifier ELECTRIC_FLOOR_ID = new Identifier(MOD_ID, "electric_floor");
@@ -31,10 +32,12 @@ public class Main implements ModInitializer {
 	}
 
 	public static boolean isConvertible(BlockState state) {
+		if (state.getBlock() == SPAWN_PLATFORM) return false;
 		return FLOOR_CONVERSIONS.containsKey(state.getBlock());
 	}
 
 	static {
+		FLOOR_CONVERSIONS.put(SPAWN_PLATFORM, Blocks.WHITE_STAINED_GLASS);
 		FLOOR_CONVERSIONS.put(Blocks.WHITE_STAINED_GLASS, Blocks.LIGHT_BLUE_STAINED_GLASS);
 		FLOOR_CONVERSIONS.put(Blocks.LIGHT_BLUE_STAINED_GLASS, Blocks.MAGENTA_STAINED_GLASS);
 		FLOOR_CONVERSIONS.put(Blocks.MAGENTA_STAINED_GLASS, Blocks.RED_STAINED_GLASS);

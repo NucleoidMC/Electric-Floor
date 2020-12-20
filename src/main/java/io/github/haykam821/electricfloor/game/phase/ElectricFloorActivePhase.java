@@ -80,7 +80,7 @@ public class ElectricFloorActivePhase {
 		this.singleplayer = this.players.size() == 1;
 
 		ElectricFloorMapConfig mapConfig = this.config.getMapConfig();
-		int spawnRadius = (Math.min(mapConfig.x, mapConfig.z) - 3) / 2;
+		int spawnRadius = (Math.min(mapConfig.x, mapConfig.z) - 4) / 2;
 
 		Vec3d center = this.map.getPlatform().getCenter();
 
@@ -92,7 +92,13 @@ public class ElectricFloorActivePhase {
 			double x = center.getX() + Math.sin(theta) * spawnRadius;
 			double z = center.getZ() + Math.cos(theta) * spawnRadius;
 
-			player.teleport(this.gameSpace.getWorld(), x, 1, z, (float) theta - 180, 0);
+			player.teleport(this.world, x, 1, z, (float) theta - 180, 0);
+
+			// Create spawn platform
+			for (BlockPos pos : BlockPos.iterate((int) x - 1, 0, (int) z - 1, (int) x, 0, (int) z)) {
+				this.world.setBlockState(pos, Main.SPAWN_PLATFORM.getDefaultState());
+				this.convertPositions.putIfAbsent(pos.asLong(), this.config.getSpawnPlatformDelay());
+			}
 		}
 	}
 

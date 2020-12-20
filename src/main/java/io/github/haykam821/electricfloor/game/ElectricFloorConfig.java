@@ -11,17 +11,20 @@ public class ElectricFloorConfig {
 		return instance.group(
 			ElectricFloorMapConfig.CODEC.fieldOf("map").forGetter(ElectricFloorConfig::getMapConfig),
 			PlayerConfig.CODEC.fieldOf("players").forGetter(ElectricFloorConfig::getPlayerConfig),
+			Codec.INT.optionalFieldOf("spawn_platform_delay", 20 * 2).forGetter(ElectricFloorConfig::getSpawnPlatformDelay),
 			Codec.INT.optionalFieldOf("delay", 5).forGetter(ElectricFloorConfig::getDelay)
 		).apply(instance, ElectricFloorConfig::new);
 	});
 
 	private final ElectricFloorMapConfig mapConfig;
 	private final PlayerConfig playerConfig;
+	private final int spawnPlatformDelay;
 	private final int delay;
 
-	public ElectricFloorConfig(ElectricFloorMapConfig mapConfig, PlayerConfig playerConfig, int delay) {
+	public ElectricFloorConfig(ElectricFloorMapConfig mapConfig, PlayerConfig playerConfig, int spawnPlatformDelay, int delay) {
 		this.mapConfig = mapConfig;
 		this.playerConfig = playerConfig;
+		this.spawnPlatformDelay = spawnPlatformDelay;
 		this.delay = delay;
 	}
 
@@ -31,6 +34,10 @@ public class ElectricFloorConfig {
 
 	public PlayerConfig getPlayerConfig() {
 		return this.playerConfig;
+	}
+
+	public int getSpawnPlatformDelay() {
+		return this.spawnPlatformDelay;
 	}
 
 	public int getDelay() {
