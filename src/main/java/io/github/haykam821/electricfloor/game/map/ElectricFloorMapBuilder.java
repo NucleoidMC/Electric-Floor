@@ -4,8 +4,8 @@ import io.github.haykam821.electricfloor.game.ElectricFloorConfig;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.util.math.BlockPos;
-import xyz.nucleoid.plasmid.map.template.MapTemplate;
-import xyz.nucleoid.plasmid.util.BlockBounds;
+import xyz.nucleoid.map_templates.BlockBounds;
+import xyz.nucleoid.map_templates.MapTemplate;
 
 public class ElectricFloorMapBuilder {
 	private static final BlockState FLOOR = Blocks.WHITE_STAINED_GLASS.getDefaultState();
@@ -23,15 +23,15 @@ public class ElectricFloorMapBuilder {
 		MapTemplate template = MapTemplate.createEmpty();
 		ElectricFloorMapConfig mapConfig = this.config.getMapConfig();
 
-		BlockBounds bounds = new BlockBounds(BlockPos.ORIGIN, new BlockPos(mapConfig.x + 1, 2, mapConfig.z + 1));
+		BlockBounds bounds = BlockBounds.of(BlockPos.ORIGIN, new BlockPos(mapConfig.x + 1, 2, mapConfig.z + 1));
 		this.build(bounds, template, mapConfig);
 
 		return new ElectricFloorMap(template, bounds);
 	}
 
 	private BlockState getBlockState(BlockPos pos, BlockBounds bounds, ElectricFloorMapConfig mapConfig) {
-		int layer = pos.getY() - bounds.getMin().getY();
-		boolean outline = pos.getX() == bounds.getMin().getX() || pos.getX() == bounds.getMax().getX() || pos.getZ() == bounds.getMin().getZ() || pos.getZ() == bounds.getMax().getZ();
+		int layer = pos.getY() - bounds.min().getY();
+		boolean outline = pos.getX() == bounds.min().getX() || pos.getX() == bounds.max().getX() || pos.getZ() == bounds.min().getZ() || pos.getZ() == bounds.max().getZ();
 
 		if (outline) {
 			if (layer == 0) {

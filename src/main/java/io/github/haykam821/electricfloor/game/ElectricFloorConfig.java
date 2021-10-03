@@ -4,7 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import io.github.haykam821.electricfloor.game.map.ElectricFloorMapConfig;
-import xyz.nucleoid.plasmid.game.config.PlayerConfig;
+import xyz.nucleoid.plasmid.game.common.config.PlayerConfig;
 
 public class ElectricFloorConfig {
 	public static final Codec<ElectricFloorConfig> CODEC = RecordCodecBuilder.create(instance -> {

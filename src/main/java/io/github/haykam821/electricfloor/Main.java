@@ -19,7 +19,7 @@ public class Main implements ModInitializer {
 	public static final Map<Block, Block> FLOOR_CONVERSIONS = new HashMap<>();
 
 	private static final Identifier ELECTRIC_FLOOR_ID = new Identifier(MOD_ID, "electric_floor");
-	public static final GameType<ElectricFloorConfig> ELECTRIC_FLOOR_TYPE = GameType.register(ELECTRIC_FLOOR_ID, ElectricFloorWaitingPhase::open, ElectricFloorConfig.CODEC);
+	public static final GameType<ElectricFloorConfig> ELECTRIC_FLOOR_TYPE = GameType.register(ELECTRIC_FLOOR_ID, ElectricFloorConfig.CODEC, ElectricFloorWaitingPhase::open);
 
 	@Override
 	public void onInitialize() {

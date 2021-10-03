@@ -1,5 +1,9 @@
 package io.github.haykam821.electricfloor.game.phase;
 
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+
 import io.github.haykam821.electricfloor.Main;
 import io.github.haykam821.electricfloor.game.ElectricFloorConfig;
 import io.github.haykam821.electricfloor.game.map.ElectricFloorMap;
@@ -10,7 +14,6 @@ import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
@@ -20,20 +23,13 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameMode;
+import xyz.nucleoid.plasmid.game.GameActivity;
 import xyz.nucleoid.plasmid.game.GameCloseReason;
-import xyz.nucleoid.plasmid.game.GameLogic;
 import xyz.nucleoid.plasmid.game.GameSpace;
-import xyz.nucleoid.plasmid.game.event.GameOpenListener;
-import xyz.nucleoid.plasmid.game.event.GameTickListener;
-import xyz.nucleoid.plasmid.game.event.PlayerAddListener;
-import xyz.nucleoid.plasmid.game.event.PlayerDeathListener;
-import xyz.nucleoid.plasmid.game.event.PlayerRemoveListener;
-import xyz.nucleoid.plasmid.game.rule.GameRule;
-import xyz.nucleoid.plasmid.game.rule.RuleResult;
-
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import xyz.nucleoid.plasmid.game.event.GameActivityEvents;
+import xyz.nucleoid.plasmid.game.event.GamePlayerEvents;
+import xyz.nucleoid.plasmid.game.rule.GameRuleType;
+import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
 public class ElectricFloorActivePhase {
 	private final ServerWorld world;
@@ -45,49 +41,49 @@ public class ElectricFloorActivePhase {
 	private final Long2IntMap convertPositions = new Long2IntOpenHashMap();
 	private boolean opened;
 
-	public ElectricFloorActivePhase(GameSpace gameSpace, ElectricFloorMap map, ElectricFloorConfig config) {
-		this.world = gameSpace.getWorld();
+	public ElectricFloorActivePhase(GameSpace gameSpace, ServerWorld world, ElectricFloorMap map, ElectricFloorConfig config) {
+		this.world = world;
 		this.gameSpace = gameSpace;
 		this.map = map;
 		this.config = config;
 	}
 
-	public static void setRules(GameLogic game) {
-		game.setRule(GameRule.CRAFTING, RuleResult.DENY);
-		game.setRule(GameRule.FALL_DAMAGE, RuleResult.DENY);
-		game.setRule(GameRule.HUNGER, RuleResult.DENY);
-		game.setRule(GameRule.PORTALS, RuleResult.DENY);
-		game.setRule(GameRule.PVP, RuleResult.DENY);
+	public static void setRules(GameActivity activity) {
+		activity.deny(GameRuleType.CRAFTING);
+		activity.deny(GameRuleType.FALL_DAMAGE);
+		activity.deny(GameRuleType.HUNGER);
+		activity.deny(GameRuleType.PORTALS);
+		activity.deny(GameRuleType.PVP);
 	}
 
-	public static void open(GameSpace gameSpace, ElectricFloorMap map, ElectricFloorConfig config) {
-		gameSpace.openGame(game -> {
-			ElectricFloorActivePhase phase = new ElectricFloorActivePhase(gameSpace, map, config);
+	public static void open(GameSpace gameSpace, ServerWorld world, ElectricFloorMap map, ElectricFloorConfig config) {
+		gameSpace.setActivity(activity -> {
+			ElectricFloorActivePhase phase = new ElectricFloorActivePhase(gameSpace, world, map, config);
 			gameSpace.getPlayers().forEach(phase.players::add);
 
-			ElectricFloorActivePhase.setRules(game);
+			ElectricFloorActivePhase.setRules(activity);
 
 			// Listeners
-			game.on(GameOpenListener.EVENT, phase::open);
-			game.on(GameTickListener.EVENT, phase::tick);
-			game.on(PlayerAddListener.EVENT, phase::addPlayer);
-			game.on(PlayerRemoveListener.EVENT, phase::removePlayer);
-			game.on(PlayerDeathListener.EVENT, phase::onPlayerDeath);
+			activity.listen(GameActivityEvents.ENABLE, phase::enable);
+			activity.listen(GameActivityEvents.TICK, phase::tick);
+			activity.listen(GamePlayerEvents.ADD, phase::addPlayer);
+			activity.listen(GamePlayerEvents.REMOVE, phase::removePlayer);
+			activity.listen(PlayerDeathEvent.EVENT, phase::onPlayerDeath);
 		});
 	}
 
-	public void open() {
+	public void enable() {
 		this.opened = true;
 		this.singleplayer = this.players.size() == 1;
 
 		ElectricFloorMapConfig mapConfig = this.config.getMapConfig();
 		int spawnRadius = (Math.min(mapConfig.x, mapConfig.z) - 4) / 2;
 
-		Vec3d center = this.map.getPlatform().getCenter();
+		Vec3d center = this.map.getPlatform().center();
 
 		int index = 0;
  		for (ServerPlayerEntity player : this.players) {
-			player.setGameMode(GameMode.ADVENTURE);
+			player.changeGameMode(GameMode.ADVENTURE);
 
 			double theta = ((double) index++ / this.players.size()) * 2 * Math.PI;
 			double x = center.getX() + Math.sin(theta) * spawnRadius;
@@ -163,8 +159,8 @@ public class ElectricFloorActivePhase {
 		return new LiteralText("Nobody won the game!").formatted(Formatting.GOLD);
 	}
 
-	private void setSpectator(PlayerEntity player) {
-		player.setGameMode(GameMode.SPECTATOR);
+	private void setSpectator(ServerPlayerEntity player) {
+		player.changeGameMode(GameMode.SPECTATOR);
 	}
 
 	public void addPlayer(ServerPlayerEntity player) {
