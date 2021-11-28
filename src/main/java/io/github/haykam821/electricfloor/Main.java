@@ -11,6 +11,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.util.Identifier;
 import xyz.nucleoid.plasmid.game.GameType;
+import xyz.nucleoid.plasmid.game.stats.StatisticKey;
 
 public class Main implements ModInitializer {
 	public static final String MOD_ID = "electricfloor";
@@ -20,6 +21,9 @@ public class Main implements ModInitializer {
 
 	private static final Identifier ELECTRIC_FLOOR_ID = new Identifier(MOD_ID, "electric_floor");
 	public static final GameType<ElectricFloorConfig> ELECTRIC_FLOOR_TYPE = GameType.register(ELECTRIC_FLOOR_ID, ElectricFloorConfig.CODEC, ElectricFloorWaitingPhase::open);
+
+	private static final Identifier BLOCKS_CONVERTED_ID = new Identifier(MOD_ID, "blocks_converted");
+	public static final StatisticKey<Integer> BLOCKS_CONVERTED = StatisticKey.intKey(BLOCKS_CONVERTED_ID, StatisticKey.StorageType.TOTAL);
 
 	@Override
 	public void onInitialize() {

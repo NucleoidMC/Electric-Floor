@@ -1,4 +1,6 @@
 {
 	"game.electricfloor.standard_electric_floor": "Electric Floor",
-	"gameType.electricfloor.electric_floor": "Electric Floor"
+	"gameType.electricfloor.electric_floor": "Electric Floor",
+	"statistic.bundle.electric_floor": "Electric Floor",
+	"statistic.electric_floor.blocks_converted": "Blocks converted"
 }
