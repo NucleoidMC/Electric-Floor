@@ -179,6 +179,8 @@ public class ElectricFloorActivePhase {
 	}
 
 	public void eliminate(ServerPlayerEntity eliminatedPlayer, boolean remove) {
+		if (!this.players.contains(eliminatedPlayer)) return;
+
 		Text message = eliminatedPlayer.getDisplayName().shallowCopy().append(" has been eliminated!").formatted(Formatting.RED);
 		for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
 			player.sendMessage(message, false);
