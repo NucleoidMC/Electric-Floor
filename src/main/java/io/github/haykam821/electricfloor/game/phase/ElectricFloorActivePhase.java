@@ -28,6 +28,8 @@ import xyz.nucleoid.plasmid.game.GameCloseReason;
 import xyz.nucleoid.plasmid.game.GameSpace;
 import xyz.nucleoid.plasmid.game.event.GameActivityEvents;
 import xyz.nucleoid.plasmid.game.event.GamePlayerEvents;
+import xyz.nucleoid.plasmid.game.player.PlayerOffer;
+import xyz.nucleoid.plasmid.game.player.PlayerOfferResult;
 import xyz.nucleoid.plasmid.game.rule.GameRuleType;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
@@ -39,7 +41,6 @@ public class ElectricFloorActivePhase {
 	private final Set<ServerPlayerEntity> players = new HashSet<>();
 	private boolean singleplayer;
 	private final Long2IntMap convertPositions = new Long2IntOpenHashMap();
-	private boolean opened;
 
 	public ElectricFloorActivePhase(GameSpace gameSpace, ServerWorld world, ElectricFloorMap map, ElectricFloorConfig config) {
 		this.world = world;
@@ -66,14 +67,13 @@ public class ElectricFloorActivePhase {
 			// Listeners
 			activity.listen(GameActivityEvents.ENABLE, phase::enable);
 			activity.listen(GameActivityEvents.TICK, phase::tick);
-			activity.listen(GamePlayerEvents.ADD, phase::addPlayer);
+			activity.listen(GamePlayerEvents.OFFER, phase::offerPlayer);
 			activity.listen(GamePlayerEvents.REMOVE, phase::removePlayer);
 			activity.listen(PlayerDeathEvent.EVENT, phase::onPlayerDeath);
 		});
 	}
 
 	public void enable() {
-		this.opened = true;
 		this.singleplayer = this.players.size() == 1;
 
 		ElectricFloorMapConfig mapConfig = this.config.getMapConfig();
@@ -159,16 +159,19 @@ public class ElectricFloorActivePhase {
 		return new LiteralText("Nobody won the game!").formatted(Formatting.GOLD);
 	}
 
+	private Vec3d getSpectatorSpawnPos() {
+		Vec3d center = this.map.getPlatform().center();
+		return new Vec3d(center.getX(), 4, center.getZ());
+	}
+
 	private void setSpectator(ServerPlayerEntity player) {
 		player.changeGameMode(GameMode.SPECTATOR);
 	}
 
-	public void addPlayer(ServerPlayerEntity player) {
-		if (!this.players.contains(player)) {
-			this.setSpectator(player);
-		} else if (this.opened) {
-			this.eliminate(player, true);
-		}
+	public PlayerOfferResult offerPlayer(PlayerOffer offer) {
+		return offer.accept(this.world, this.getSpectatorSpawnPos()).and(() -> {
+			this.setSpectator(offer.player());
+		});
 	}
 
 	public void removePlayer(ServerPlayerEntity player) {
