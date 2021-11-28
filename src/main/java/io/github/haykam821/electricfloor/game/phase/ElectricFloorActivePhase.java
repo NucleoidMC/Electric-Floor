@@ -16,8 +16,8 @@ import net.minecraft.block.BlockState;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
@@ -186,9 +186,9 @@ public class ElectricFloorActivePhase {
 
 	private Text getEndingMessage(ServerPlayerEntity winner) {
 		if (winner != null) {
-			return winner.getDisplayName().shallowCopy().append(" has won the game!").formatted(Formatting.GOLD);
+			return new TranslatableText("text.electricfloor.win", winner.getDisplayName()).formatted(Formatting.GOLD);
 		}
-		return new LiteralText("Nobody won the game!").formatted(Formatting.GOLD);
+		return new TranslatableText("text.electricfloor.no_winners").formatted(Formatting.GOLD);
 	}
 
 	private Vec3d getSpectatorSpawnPos() {
@@ -214,7 +214,7 @@ public class ElectricFloorActivePhase {
 		if (this.closing) return;
 		if (!this.players.contains(eliminatedPlayer)) return;
 
-		Text message = eliminatedPlayer.getDisplayName().shallowCopy().append(" has been eliminated!").formatted(Formatting.RED);
+		Text message = new TranslatableText("text.electricfloor.eliminated", eliminatedPlayer.getDisplayName()).formatted(Formatting.RED);
 		for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
 			player.sendMessage(message, false);
 		}

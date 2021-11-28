@@ -1,6 +1,9 @@
 {
 	"game.electricfloor.standard_electric_floor": "Electric Floor",
 	"gameType.electricfloor.electric_floor": "Electric Floor",
-	"statistic.bundle.electric_floor": "Electric Floor",
-	"statistic.electric_floor.blocks_converted": "Blocks converted"
+	"statistic.bundle.electricfloor": "Electric Floor",
+	"statistic.electricfloor.blocks_converted": "Blocks converted",
+	"text.electricfloor.eliminated": "%s has been eliminated!",
+	"text.electricfloor.no_winners": "Nobody won the game!",
+	"text.electricfloor.win": "%s has won the game!"
 }
