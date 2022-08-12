@@ -17,7 +17,6 @@ import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
@@ -142,8 +141,8 @@ public class ElectricFloorActivePhase {
 				playerIterator.remove();
 			}
 
-			BlockPos landingPos = player.getLandingPos();
-			BlockState state = this.world.getBlockState(landingPos);
+			BlockPos steppingPos = player.getSteppingPos();
+			BlockState state = this.world.getBlockState(steppingPos);
 
 			if (Main.isConvertible(state)) {
 				BlockState convertedState = Main.getConvertedFloor(state);
@@ -151,12 +150,12 @@ public class ElectricFloorActivePhase {
 					this.eliminate(player, false);
 					playerIterator.remove();
 				} else {
-					long landingPosKey = landingPos.asLong();
-					if (!this.convertPositions.containsKey(landingPosKey)) {
+					long steppingPosKey = steppingPos.asLong();
+					if (!this.convertPositions.containsKey(steppingPosKey)) {
 						if (!this.singleplayer) {
 							this.statistics.forPlayer(player).increment(Main.BLOCKS_CONVERTED, 1);
 						}
-						this.convertPositions.put(landingPosKey, this.config.getDelay());
+						this.convertPositions.put(steppingPosKey, this.config.getDelay());
 					}
 				}
 			}
@@ -186,9 +185,9 @@ public class ElectricFloorActivePhase {
 
 	private Text getEndingMessage(ServerPlayerEntity winner) {
 		if (winner != null) {
-			return new TranslatableText("text.electricfloor.win", winner.getDisplayName()).formatted(Formatting.GOLD);
+			return Text.translatable("text.electricfloor.win", winner.getDisplayName()).formatted(Formatting.GOLD);
 		}
-		return new TranslatableText("text.electricfloor.no_winners").formatted(Formatting.GOLD);
+		return Text.translatable("text.electricfloor.no_winners").formatted(Formatting.GOLD);
 	}
 
 	private Vec3d getSpectatorSpawnPos() {
@@ -214,7 +213,7 @@ public class ElectricFloorActivePhase {
 		if (this.closing) return;
 		if (!this.players.contains(eliminatedPlayer)) return;
 
-		Text message = new TranslatableText("text.electricfloor.eliminated", eliminatedPlayer.getDisplayName()).formatted(Formatting.RED);
+		Text message = Text.translatable("text.electricfloor.eliminated", eliminatedPlayer.getDisplayName()).formatted(Formatting.RED);
 		for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
 			player.sendMessage(message, false);
 		}

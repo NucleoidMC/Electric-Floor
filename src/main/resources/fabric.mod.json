@@ -16,7 +16,6 @@
 			"io.github.haykam821.electricfloor.Main"
 		]
 	},
-	"accessWidener": "electricfloor.accesswidener",
 	"license": "MIT",
 	"icon": "assets/electricfloor/icon.png",
 	"depends": {
