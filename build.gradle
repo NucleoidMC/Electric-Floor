@@ -1,10 +1,10 @@
 plugins {
-	id "fabric-loom" version "0.9-SNAPSHOT"
+	id "fabric-loom" version "0.12.56"
 	id "maven-publish"
 }
 
-sourceCompatibility = JavaVersion.VERSION_16
-targetCompatibility = JavaVersion.VERSION_16
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
 
 archivesBaseName = project.archives_base_name
 version = project.mod_version
@@ -19,11 +19,10 @@ repositories {
 		name = "Nucleoid"
 		url = "https://maven.nucleoid.xyz/"
 	}
-	jcenter()
 }
 
-minecraft {
-	accessWidener = file("src/main/resources/electricfloor.accesswidener")
+loom {
+	accessWidenerPath = file("src/main/resources/electricfloor.accesswidener")
 }
 
 dependencies {

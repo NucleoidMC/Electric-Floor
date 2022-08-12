@@ -23,7 +23,7 @@ public class Main implements ModInitializer {
 	public static final GameType<ElectricFloorConfig> ELECTRIC_FLOOR_TYPE = GameType.register(ELECTRIC_FLOOR_ID, ElectricFloorConfig.CODEC, ElectricFloorWaitingPhase::open);
 
 	private static final Identifier BLOCKS_CONVERTED_ID = new Identifier(MOD_ID, "blocks_converted");
-	public static final StatisticKey<Integer> BLOCKS_CONVERTED = StatisticKey.intKey(BLOCKS_CONVERTED_ID, StatisticKey.StorageType.TOTAL);
+	public static final StatisticKey<Integer> BLOCKS_CONVERTED = StatisticKey.intKey(BLOCKS_CONVERTED_ID);
 
 	@Override
 	public void onInitialize() {
