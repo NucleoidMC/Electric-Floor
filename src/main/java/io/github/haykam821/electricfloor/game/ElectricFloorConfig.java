@@ -4,6 +4,9 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import io.github.haykam821.electricfloor.game.map.ElectricFloorMapConfig;
+import net.minecraft.SharedConstants;
+import net.minecraft.util.math.intprovider.ConstantIntProvider;
+import net.minecraft.util.math.intprovider.IntProvider;
 import xyz.nucleoid.plasmid.game.common.config.PlayerConfig;
 
 public class ElectricFloorConfig {
@@ -11,6 +14,7 @@ public class ElectricFloorConfig {
 		return instance.group(
 			ElectricFloorMapConfig.CODEC.fieldOf("map").forGetter(ElectricFloorConfig::getMapConfig),
 			PlayerConfig.CODEC.fieldOf("players").forGetter(ElectricFloorConfig::getPlayerConfig),
+			IntProvider.NON_NEGATIVE_CODEC.optionalFieldOf("ticks_until_close", ConstantIntProvider.create(SharedConstants.TICKS_PER_SECOND * 5)).forGetter(ElectricFloorConfig::getTicksUntilClose),
 			Codec.INT.optionalFieldOf("spawn_platform_delay", 20 * 2).forGetter(ElectricFloorConfig::getSpawnPlatformDelay),
 			Codec.INT.optionalFieldOf("delay", 5).forGetter(ElectricFloorConfig::getDelay)
 		).apply(instance, ElectricFloorConfig::new);
@@ -18,12 +22,14 @@ public class ElectricFloorConfig {
 
 	private final ElectricFloorMapConfig mapConfig;
 	private final PlayerConfig playerConfig;
+	private final IntProvider ticksUntilClose;
 	private final int spawnPlatformDelay;
 	private final int delay;
 
-	public ElectricFloorConfig(ElectricFloorMapConfig mapConfig, PlayerConfig playerConfig, int spawnPlatformDelay, int delay) {
+	public ElectricFloorConfig(ElectricFloorMapConfig mapConfig, PlayerConfig playerConfig, IntProvider ticksUntilClose, int spawnPlatformDelay, int delay) {
 		this.mapConfig = mapConfig;
 		this.playerConfig = playerConfig;
+		this.ticksUntilClose = ticksUntilClose;
 		this.spawnPlatformDelay = spawnPlatformDelay;
 		this.delay = delay;
 	}
@@ -34,6 +40,10 @@ public class ElectricFloorConfig {
 
 	public PlayerConfig getPlayerConfig() {
 		return this.playerConfig;
+	}
+
+	public IntProvider getTicksUntilClose() {
+		return this.ticksUntilClose;
 	}
 
 	public int getSpawnPlatformDelay() {

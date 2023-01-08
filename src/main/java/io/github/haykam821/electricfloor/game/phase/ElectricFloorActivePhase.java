@@ -45,7 +45,7 @@ public class ElectricFloorActivePhase {
 	private boolean singleplayer;
 	private final Long2IntMap convertPositions = new Long2IntOpenHashMap();
 	private int timeElapsed = 0;
-	private boolean closing = false;
+	private int ticksUntilClose = -1;
 
 	public ElectricFloorActivePhase(GameSpace gameSpace, ServerWorld world, ElectricFloorMap map, ElectricFloorConfig config) {
 		this.world = world;
@@ -111,6 +111,16 @@ public class ElectricFloorActivePhase {
 	}
 
 	public void tick() {
+		// Decrease ticks until game end to zero
+		if (this.isGameEnding()) {
+			if (this.ticksUntilClose == 0) {
+				this.gameSpace.close(GameCloseReason.FINISHED);
+			}
+
+			this.ticksUntilClose -= 1;
+			return;
+		}
+
 		this.timeElapsed += 1;
 
 		BlockPos.Mutable pos = new BlockPos.Mutable();
@@ -171,8 +181,7 @@ public class ElectricFloorActivePhase {
 
 			this.gameSpace.getPlayers().sendMessage(this.getEndingMessage(winner));
 
-			this.closing = true;
-			this.gameSpace.close(GameCloseReason.FINISHED);
+			this.endGame();
 		}
 	}
 
@@ -210,7 +219,7 @@ public class ElectricFloorActivePhase {
 	}
 
 	public void eliminate(ServerPlayerEntity eliminatedPlayer, boolean remove) {
-		if (this.closing) return;
+		if (this.isGameEnding()) return;
 		if (!this.players.contains(eliminatedPlayer)) return;
 
 		Text message = Text.translatable("text.electricfloor.eliminated", eliminatedPlayer.getDisplayName()).formatted(Formatting.RED);
@@ -236,5 +245,13 @@ public class ElectricFloorActivePhase {
 	public ActionResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
 		this.eliminate(player, true);
 		return ActionResult.SUCCESS;
+	}
+
+	private void endGame() {
+		this.ticksUntilClose = this.config.getTicksUntilClose().get(this.world.getRandom());
+	}
+
+	private boolean isGameEnding() {
+		return this.ticksUntilClose >= 0;
 	}
 }
