@@ -21,10 +21,6 @@ repositories {
 	}
 }
 
-loom {
-	accessWidenerPath = file("src/main/resources/electricfloor.accesswidener")
-}
-
 dependencies {
 	// Main
 	minecraft("com.mojang:minecraft:${project.minecraft_version}")
