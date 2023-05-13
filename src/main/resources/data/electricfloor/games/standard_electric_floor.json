@@ -1,5 +1,6 @@
 {
 	"type": "electricfloor:electric_floor",
+	"icon": "minecraft:magenta_stained_glass",
 	"map": {
 		"x": 36,
 		"z": 36
