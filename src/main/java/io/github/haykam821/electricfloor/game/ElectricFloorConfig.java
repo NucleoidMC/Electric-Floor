@@ -1,5 +1,7 @@
 package io.github.haykam821.electricfloor.game;
 
+import java.util.Optional;
+
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
@@ -7,7 +9,9 @@ import io.github.haykam821.electricfloor.game.map.ElectricFloorMapConfig;
 import net.minecraft.SharedConstants;
 import net.minecraft.util.math.intprovider.ConstantIntProvider;
 import net.minecraft.util.math.intprovider.IntProvider;
+import xyz.nucleoid.plasmid.game.GameSpace;
 import xyz.nucleoid.plasmid.game.common.config.PlayerConfig;
+import xyz.nucleoid.plasmid.game.stats.GameStatisticBundle;
 
 public class ElectricFloorConfig {
 	public static final Codec<ElectricFloorConfig> CODEC = RecordCodecBuilder.create(instance -> {
@@ -16,7 +20,8 @@ public class ElectricFloorConfig {
 			PlayerConfig.CODEC.fieldOf("players").forGetter(ElectricFloorConfig::getPlayerConfig),
 			IntProvider.NON_NEGATIVE_CODEC.optionalFieldOf("ticks_until_close", ConstantIntProvider.create(SharedConstants.TICKS_PER_SECOND * 5)).forGetter(ElectricFloorConfig::getTicksUntilClose),
 			Codec.INT.optionalFieldOf("spawn_platform_delay", 20 * 2).forGetter(ElectricFloorConfig::getSpawnPlatformDelay),
-			Codec.INT.optionalFieldOf("delay", 5).forGetter(ElectricFloorConfig::getDelay)
+			Codec.INT.optionalFieldOf("delay", 5).forGetter(ElectricFloorConfig::getDelay),
+			Codec.STRING.optionalFieldOf("statistic_bundle_namespace").forGetter(ElectricFloorConfig::getStatisticBundleNamespace)
 		).apply(instance, ElectricFloorConfig::new);
 	});
 
@@ -25,13 +30,15 @@ public class ElectricFloorConfig {
 	private final IntProvider ticksUntilClose;
 	private final int spawnPlatformDelay;
 	private final int delay;
+	private final Optional<String> statisticBundleNamespace;
 
-	public ElectricFloorConfig(ElectricFloorMapConfig mapConfig, PlayerConfig playerConfig, IntProvider ticksUntilClose, int spawnPlatformDelay, int delay) {
+	public ElectricFloorConfig(ElectricFloorMapConfig mapConfig, PlayerConfig playerConfig, IntProvider ticksUntilClose, int spawnPlatformDelay, int delay, Optional<String> statisticBundleNamespace) {
 		this.mapConfig = mapConfig;
 		this.playerConfig = playerConfig;
 		this.ticksUntilClose = ticksUntilClose;
 		this.spawnPlatformDelay = spawnPlatformDelay;
 		this.delay = delay;
+		this.statisticBundleNamespace = statisticBundleNamespace;
 	}
 
 	public ElectricFloorMapConfig getMapConfig() {
@@ -52,5 +59,17 @@ public class ElectricFloorConfig {
 
 	public int getDelay() {
 		return this.delay;
+	}
+
+	public Optional<String> getStatisticBundleNamespace() {
+		return this.statisticBundleNamespace;
+	}
+
+	public GameStatisticBundle getStatisticBundle(GameSpace gameSpace) {
+		return this.statisticBundleNamespace
+			.map(namespace -> {
+				return gameSpace.getStatistics().bundle(namespace);
+			})
+			.orElse(null);
 	}
 }

@@ -53,7 +53,7 @@ public class ElectricFloorActivePhase {
 		this.map = map;
 		this.config = config;
 
-		this.statistics = gameSpace.getStatistics().bundle(Main.MOD_ID);
+		this.statistics = config.getStatisticBundle(gameSpace);
 	}
 
 	public static void setRules(GameActivity activity) {
@@ -92,7 +92,7 @@ public class ElectricFloorActivePhase {
  		for (ServerPlayerEntity player : this.players) {
 			player.changeGameMode(GameMode.ADVENTURE);
 
-			if (!this.singleplayer) {
+			if (!this.singleplayer && this.statistics != null) {
 				this.statistics.forPlayer(player).increment(StatisticKeys.GAMES_PLAYED, 1);
 			}
 
@@ -162,7 +162,7 @@ public class ElectricFloorActivePhase {
 				} else {
 					long steppingPosKey = steppingPos.asLong();
 					if (!this.convertPositions.containsKey(steppingPosKey)) {
-						if (!this.singleplayer) {
+						if (!this.singleplayer && this.statistics != null) {
 							this.statistics.forPlayer(player).increment(Main.BLOCKS_CONVERTED, 1);
 						}
 						this.convertPositions.put(steppingPosKey, this.config.getDelay());
@@ -236,7 +236,7 @@ public class ElectricFloorActivePhase {
 	}
 
 	public void applyPlayerFinishStatistics(ServerPlayerEntity player, StatisticKey<Integer> finishTypeKey) {
-		if (!this.singleplayer) {
+		if (!this.singleplayer && this.statistics != null) {
 			this.statistics.forPlayer(player).increment(finishTypeKey, 1);
 			this.statistics.forPlayer(player).set(StatisticKeys.LONGEST_TIME, this.timeElapsed);
 		}
