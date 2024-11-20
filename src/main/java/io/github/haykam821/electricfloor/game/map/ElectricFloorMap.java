@@ -1,13 +1,17 @@
 package io.github.haykam821.electricfloor.game.map;
 
+import java.util.Set;
+
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.map_templates.MapTemplate;
-import xyz.nucleoid.plasmid.game.world.generator.TemplateChunkGenerator;
+import xyz.nucleoid.plasmid.api.game.world.generator.TemplateChunkGenerator;
 
 public class ElectricFloorMap {
 	private final MapTemplate template;
@@ -34,6 +38,11 @@ public class ElectricFloorMap {
 
 	public Vec3d getWaitingSpawnPos() {
 		return this.createCenterPos(1, 4);
+	}
+
+	public void teleportToWaitingSpawn(ServerPlayerEntity player, ServerWorld world) {
+		Vec3d pos = this.getWaitingSpawnPos();
+		player.teleport(world, pos.getX(), pos.getY(), pos.getZ(), Set.of(), 0, 0, true);
 	}
 
 	public Vec3d getSpectatorSpawnPos() {
