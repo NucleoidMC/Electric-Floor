@@ -4,26 +4,27 @@ import eu.pb4.polymer.virtualentity.api.ElementHolder;
 import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
 import eu.pb4.polymer.virtualentity.api.attachment.HolderAttachment;
 import io.github.haykam821.electricfloor.game.ElectricFloorConfig;
+import io.github.haykam821.electricfloor.game.map.ElectricFloorGuideText;
 import io.github.haykam821.electricfloor.game.map.ElectricFloorMap;
 import io.github.haykam821.electricfloor.game.map.ElectricFloorMapBuilder;
-import io.github.haykam821.electricfloor.game.map.ElectricFloorGuideText;
 import net.minecraft.SharedConstants;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameMode;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
-import xyz.nucleoid.plasmid.game.GameOpenContext;
-import xyz.nucleoid.plasmid.game.GameOpenProcedure;
-import xyz.nucleoid.plasmid.game.GameResult;
-import xyz.nucleoid.plasmid.game.GameSpace;
-import xyz.nucleoid.plasmid.game.common.GameWaitingLobby;
-import xyz.nucleoid.plasmid.game.event.GameActivityEvents;
-import xyz.nucleoid.plasmid.game.event.GamePlayerEvents;
-import xyz.nucleoid.plasmid.game.player.PlayerOffer;
-import xyz.nucleoid.plasmid.game.player.PlayerOfferResult;
+import xyz.nucleoid.plasmid.api.game.GameOpenContext;
+import xyz.nucleoid.plasmid.api.game.GameOpenProcedure;
+import xyz.nucleoid.plasmid.api.game.GameResult;
+import xyz.nucleoid.plasmid.api.game.GameSpace;
+import xyz.nucleoid.plasmid.api.game.common.GameWaitingLobby;
+import xyz.nucleoid.plasmid.api.game.event.GameActivityEvents;
+import xyz.nucleoid.plasmid.api.game.event.GamePlayerEvents;
+import xyz.nucleoid.plasmid.api.game.player.JoinAcceptor;
+import xyz.nucleoid.plasmid.api.game.player.JoinAcceptorResult;
+import xyz.nucleoid.plasmid.api.game.player.JoinOffer;
+import xyz.nucleoid.stimuli.event.EventResult;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
 public class ElectricFloorWaitingPhase {
@@ -64,7 +65,8 @@ public class ElectricFloorWaitingPhase {
 
 			// Listeners
 			activity.listen(GameActivityEvents.ENABLE, phase::enable);
-			activity.listen(GamePlayerEvents.OFFER, phase::offerPlayer);
+			activity.listen(GamePlayerEvents.ACCEPT, phase::onAcceptPlayers);
+			activity.listen(GamePlayerEvents.OFFER, JoinOffer::accept);
 			activity.listen(PlayerDeathEvent.EVENT, phase::onPlayerDeath);
 			activity.listen(GameActivityEvents.REQUEST_START, phase::requestStart);
 		});
@@ -85,20 +87,15 @@ public class ElectricFloorWaitingPhase {
 		return GameResult.ok();
 	}
 
-	public PlayerOfferResult offerPlayer(PlayerOffer offer) {
-		return offer.accept(this.world, this.map.getWaitingSpawnPos()).and(() -> {
-			offer.player().changeGameMode(GameMode.ADVENTURE);
+	public JoinAcceptorResult onAcceptPlayers(JoinAcceptor acceptor) {
+		return acceptor.teleport(this.world, this.map.getWaitingSpawnPos()).thenRunForEach(player -> {
+			player.changeGameMode(GameMode.ADVENTURE);
 		});
 	}
 
-	public ActionResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
+	public EventResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
 		// Respawn player at the start
-		this.spawnPlayer(player);
-		return ActionResult.SUCCESS;
-	}
-
-	private void spawnPlayer(ServerPlayerEntity player) {
-		Vec3d spawnPos = this.map.getWaitingSpawnPos();
-		player.teleport(this.world, spawnPos.getX(), spawnPos.getY(), spawnPos.getZ(), 0, 0);
+		this.map.teleportToWaitingSpawn(player, this.world);
+		return EventResult.ALLOW;
 	}
 }

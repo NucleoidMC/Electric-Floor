@@ -3,21 +3,22 @@ package io.github.haykam821.electricfloor.game;
 import java.util.Optional;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import io.github.haykam821.electricfloor.game.map.ElectricFloorMapConfig;
 import net.minecraft.SharedConstants;
 import net.minecraft.util.math.intprovider.ConstantIntProvider;
 import net.minecraft.util.math.intprovider.IntProvider;
-import xyz.nucleoid.plasmid.game.GameSpace;
-import xyz.nucleoid.plasmid.game.common.config.PlayerConfig;
-import xyz.nucleoid.plasmid.game.stats.GameStatisticBundle;
+import xyz.nucleoid.plasmid.api.game.GameSpace;
+import xyz.nucleoid.plasmid.api.game.common.config.WaitingLobbyConfig;
+import xyz.nucleoid.plasmid.api.game.stats.GameStatisticBundle;
 
 public class ElectricFloorConfig {
-	public static final Codec<ElectricFloorConfig> CODEC = RecordCodecBuilder.create(instance -> {
+	public static final MapCodec<ElectricFloorConfig> CODEC = RecordCodecBuilder.mapCodec(instance -> {
 		return instance.group(
 			ElectricFloorMapConfig.CODEC.fieldOf("map").forGetter(ElectricFloorConfig::getMapConfig),
-			PlayerConfig.CODEC.fieldOf("players").forGetter(ElectricFloorConfig::getPlayerConfig),
+			WaitingLobbyConfig.CODEC.fieldOf("players").forGetter(ElectricFloorConfig::getPlayerConfig),
 			Codec.INT.optionalFieldOf("guide_ticks", SharedConstants.TICKS_PER_SECOND * 10).forGetter(ElectricFloorConfig::getGuideTicks),
 			IntProvider.NON_NEGATIVE_CODEC.optionalFieldOf("ticks_until_close", ConstantIntProvider.create(SharedConstants.TICKS_PER_SECOND * 5)).forGetter(ElectricFloorConfig::getTicksUntilClose),
 			Codec.INT.optionalFieldOf("spawn_platform_delay", 20 * 2).forGetter(ElectricFloorConfig::getSpawnPlatformDelay),
@@ -28,7 +29,7 @@ public class ElectricFloorConfig {
 	});
 
 	private final ElectricFloorMapConfig mapConfig;
-	private final PlayerConfig playerConfig;
+	private final WaitingLobbyConfig playerConfig;
 	private final int guideTicks;
 	private final IntProvider ticksUntilClose;
 	private final int spawnPlatformDelay;
@@ -36,7 +37,7 @@ public class ElectricFloorConfig {
 	private final boolean night;
 	private final Optional<String> statisticBundleNamespace;
 
-	public ElectricFloorConfig(ElectricFloorMapConfig mapConfig, PlayerConfig playerConfig, int guideTicks, IntProvider ticksUntilClose, int spawnPlatformDelay, int delay, boolean night, Optional<String> statisticBundleNamespace) {
+	public ElectricFloorConfig(ElectricFloorMapConfig mapConfig, WaitingLobbyConfig playerConfig, int guideTicks, IntProvider ticksUntilClose, int spawnPlatformDelay, int delay, boolean night, Optional<String> statisticBundleNamespace) {
 		this.mapConfig = mapConfig;
 		this.playerConfig = playerConfig;
 		this.guideTicks = guideTicks;
@@ -51,7 +52,7 @@ public class ElectricFloorConfig {
 		return this.mapConfig;
 	}
 
-	public PlayerConfig getPlayerConfig() {
+	public WaitingLobbyConfig getPlayerConfig() {
 		return this.playerConfig;
 	}
 

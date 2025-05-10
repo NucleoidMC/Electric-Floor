@@ -18,22 +18,23 @@ import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameMode;
-import xyz.nucleoid.plasmid.game.GameActivity;
-import xyz.nucleoid.plasmid.game.GameCloseReason;
-import xyz.nucleoid.plasmid.game.GameSpace;
-import xyz.nucleoid.plasmid.game.event.GameActivityEvents;
-import xyz.nucleoid.plasmid.game.event.GamePlayerEvents;
-import xyz.nucleoid.plasmid.game.player.PlayerOffer;
-import xyz.nucleoid.plasmid.game.player.PlayerOfferResult;
-import xyz.nucleoid.plasmid.game.rule.GameRuleType;
-import xyz.nucleoid.plasmid.game.stats.GameStatisticBundle;
-import xyz.nucleoid.plasmid.game.stats.StatisticKey;
-import xyz.nucleoid.plasmid.game.stats.StatisticKeys;
+import xyz.nucleoid.plasmid.api.game.GameActivity;
+import xyz.nucleoid.plasmid.api.game.GameCloseReason;
+import xyz.nucleoid.plasmid.api.game.GameSpace;
+import xyz.nucleoid.plasmid.api.game.event.GameActivityEvents;
+import xyz.nucleoid.plasmid.api.game.event.GamePlayerEvents;
+import xyz.nucleoid.plasmid.api.game.player.JoinAcceptor;
+import xyz.nucleoid.plasmid.api.game.player.JoinAcceptorResult;
+import xyz.nucleoid.plasmid.api.game.player.JoinOffer;
+import xyz.nucleoid.plasmid.api.game.rule.GameRuleType;
+import xyz.nucleoid.plasmid.api.game.stats.GameStatisticBundle;
+import xyz.nucleoid.plasmid.api.game.stats.StatisticKey;
+import xyz.nucleoid.plasmid.api.game.stats.StatisticKeys;
+import xyz.nucleoid.stimuli.event.EventResult;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
 public class ElectricFloorActivePhase {
@@ -71,14 +72,15 @@ public class ElectricFloorActivePhase {
 	public static void open(GameSpace gameSpace, ServerWorld world, ElectricFloorMap map, ElectricFloorConfig config, HolderAttachment guideText) {
 		gameSpace.setActivity(activity -> {
 			ElectricFloorActivePhase phase = new ElectricFloorActivePhase(gameSpace, world, map, config, guideText);
-			gameSpace.getPlayers().forEach(phase.players::add);
+			gameSpace.getPlayers().participants().forEach(phase.players::add);
 
 			ElectricFloorActivePhase.setRules(activity);
 
 			// Listeners
 			activity.listen(GameActivityEvents.ENABLE, phase::enable);
 			activity.listen(GameActivityEvents.TICK, phase::tick);
-			activity.listen(GamePlayerEvents.OFFER, phase::offerPlayer);
+			activity.listen(GamePlayerEvents.ACCEPT, phase::onAcceptPlayers);
+			activity.listen(GamePlayerEvents.OFFER, JoinOffer::acceptSpectators);
 			activity.listen(GamePlayerEvents.REMOVE, phase::removePlayer);
 			activity.listen(PlayerDeathEvent.EVENT, phase::onPlayerDeath);
 		});
@@ -104,13 +106,18 @@ public class ElectricFloorActivePhase {
 			double x = center.getX() + Math.sin(theta) * spawnRadius;
 			double z = center.getZ() + Math.cos(theta) * spawnRadius;
 
-			player.teleport(this.world, x, 1, z, (float) theta - 180, 0);
+			player.teleport(this.world, x, 1, z, Set.of(), (float) theta - 180, 0, true);
 
 			// Create spawn platform
 			for (BlockPos pos : BlockPos.iterate((int) x - 1, 0, (int) z - 1, (int) x, 0, (int) z)) {
 				this.setBlockState(pos, Main.SPAWN_PLATFORM.getDefaultState());
 				this.convertPositions.putIfAbsent(pos.asLong(), this.config.getSpawnPlatformDelay());
 			}
+		}
+
+		for (ServerPlayerEntity player : this.gameSpace.getPlayers().spectators()) {
+			this.map.teleportToWaitingSpawn(player, this.world);
+			this.setSpectator(player);
 		}
 	}
 
@@ -214,9 +221,9 @@ public class ElectricFloorActivePhase {
 		player.changeGameMode(GameMode.SPECTATOR);
 	}
 
-	public PlayerOfferResult offerPlayer(PlayerOffer offer) {
-		return offer.accept(this.world, this.map.getSpectatorSpawnPos()).and(() -> {
-			this.setSpectator(offer.player());
+	public JoinAcceptorResult onAcceptPlayers(JoinAcceptor acceptor) {
+		return acceptor.teleport(this.world, this.map.getSpectatorSpawnPos()).thenRunForEach(player -> {
+			this.setSpectator(player);
 		});
 	}
 
@@ -248,9 +255,9 @@ public class ElectricFloorActivePhase {
 		}
 	}
 
-	public ActionResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
+	public EventResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
 		this.eliminate(player, true);
-		return ActionResult.SUCCESS;
+		return EventResult.ALLOW;
 	}
 
 	private void endGame() {

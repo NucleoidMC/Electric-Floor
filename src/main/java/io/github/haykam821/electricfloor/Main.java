@@ -13,20 +13,20 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.LightBlock;
 import net.minecraft.util.Identifier;
-import xyz.nucleoid.plasmid.game.GameType;
-import xyz.nucleoid.plasmid.game.stats.StatisticKey;
+import xyz.nucleoid.plasmid.api.game.GameType;
+import xyz.nucleoid.plasmid.api.game.stats.StatisticKey;
 
 public class Main implements ModInitializer {
-	public static final String MOD_ID = "electricfloor";
+	private static final String MOD_ID = "electricfloor";
 
 	public static final Block SPAWN_PLATFORM = Blocks.RED_TERRACOTTA;
 	public static final Map<Block, Block> FLOOR_CONVERSIONS = new HashMap<>();
 	public static final Object2IntMap<Block> FLOOR_LIGHT = new Object2IntOpenHashMap<>();
 
-	private static final Identifier ELECTRIC_FLOOR_ID = new Identifier(MOD_ID, "electric_floor");
+	private static final Identifier ELECTRIC_FLOOR_ID = Main.identifier("electric_floor");
 	public static final GameType<ElectricFloorConfig> ELECTRIC_FLOOR_TYPE = GameType.register(ELECTRIC_FLOOR_ID, ElectricFloorConfig.CODEC, ElectricFloorWaitingPhase::open);
 
-	private static final Identifier BLOCKS_CONVERTED_ID = new Identifier(MOD_ID, "blocks_converted");
+	private static final Identifier BLOCKS_CONVERTED_ID = Main.identifier("blocks_converted");
 	public static final StatisticKey<Integer> BLOCKS_CONVERTED = StatisticKey.intKey(BLOCKS_CONVERTED_ID);
 
 	@Override
@@ -54,6 +54,10 @@ public class Main implements ModInitializer {
 		}
 
 		return null;
+	}
+
+	public static Identifier identifier(String path) {
+		return Identifier.of(MOD_ID, path);
 	}
 
 	static {
