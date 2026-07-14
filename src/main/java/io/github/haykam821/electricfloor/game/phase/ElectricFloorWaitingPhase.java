@@ -8,12 +8,12 @@ import io.github.haykam821.electricfloor.game.map.ElectricFloorGuideText;
 import io.github.haykam821.electricfloor.game.map.ElectricFloorMap;
 import io.github.haykam821.electricfloor.game.map.ElectricFloorMapBuilder;
 import net.minecraft.SharedConstants;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.GameMode;
-import xyz.nucleoid.fantasy.RuntimeWorldConfig;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.GameType;
+import xyz.nucleoid.fantasy.RuntimeLevelConfig;
 import xyz.nucleoid.plasmid.api.game.GameOpenContext;
 import xyz.nucleoid.plasmid.api.game.GameOpenProcedure;
 import xyz.nucleoid.plasmid.api.game.GameResult;
@@ -31,15 +31,15 @@ public class ElectricFloorWaitingPhase {
 	private static final int NIGHT_TICKS = SharedConstants.TICKS_PER_MINUTE * 15;
 
 	private final GameSpace gameSpace;
-	private final ServerWorld world;
+	private final ServerLevel world;
 	private final ElectricFloorMap map;
 	private final ElectricFloorConfig config;
 
 	private HolderAttachment guideText;
 
-	public ElectricFloorWaitingPhase(GameSpace gameSpace, ServerWorld world, ElectricFloorMap map, ElectricFloorConfig config) {
+	public ElectricFloorWaitingPhase(GameSpace gameSpace, ServerLevel level, ElectricFloorMap map, ElectricFloorConfig config) {
 		this.gameSpace = gameSpace;
-		this.world = world;
+		this.world = level;
 		this.map = map;
 		this.config = config;
 	}
@@ -50,15 +50,15 @@ public class ElectricFloorWaitingPhase {
 		ElectricFloorMapBuilder mapBuilder = new ElectricFloorMapBuilder(config);
 		ElectricFloorMap map = mapBuilder.create();
 
-		RuntimeWorldConfig worldConfig = new RuntimeWorldConfig()
+		RuntimeLevelConfig levelConfig = new RuntimeLevelConfig()
 			.setGenerator(map.createGenerator(context.server()));
 
 		if (config.isNight()) {
-			worldConfig.setTimeOfDay(NIGHT_TICKS);
+			//levelConfig.setTimeOfDay(NIGHT_TICKS);
 		}
 
-		return context.openWithWorld(worldConfig, (activity, world) -> {
-			ElectricFloorWaitingPhase phase = new ElectricFloorWaitingPhase(activity.getGameSpace(), world, map, config);
+		return context.openWithLevel(levelConfig, (activity, level) -> {
+			ElectricFloorWaitingPhase phase = new ElectricFloorWaitingPhase(activity.getGameSpace(), level, map, config);
 
 			GameWaitingLobby.addTo(activity, config.getPlayerConfig());
 			ElectricFloorActivePhase.setRules(activity);
@@ -74,7 +74,7 @@ public class ElectricFloorWaitingPhase {
 
 	private void enable() {
 		// Spawn guide text
-		Vec3d guideTextPos = this.map.getGuideTextPos();
+		Vec3 guideTextPos = this.map.getGuideTextPos();
 
 		if (guideTextPos != null) {
 			ElementHolder holder = ElectricFloorGuideText.createElementHolder(this.config.isNight());
@@ -89,11 +89,11 @@ public class ElectricFloorWaitingPhase {
 
 	public JoinAcceptorResult onAcceptPlayers(JoinAcceptor acceptor) {
 		return acceptor.teleport(this.world, this.map.getWaitingSpawnPos()).thenRunForEach(player -> {
-			player.changeGameMode(GameMode.ADVENTURE);
+			player.setGameMode(GameType.ADVENTURE);
 		});
 	}
 
-	public EventResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
+	public EventResult onPlayerDeath(ServerPlayer player, DamageSource source) {
 		// Respawn player at the start
 		this.map.teleportToWaitingSpawn(player, this.world);
 		return EventResult.ALLOW;

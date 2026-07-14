@@ -8,8 +8,9 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import io.github.haykam821.electricfloor.game.map.ElectricFloorMapConfig;
 import net.minecraft.SharedConstants;
-import net.minecraft.util.math.intprovider.ConstantIntProvider;
-import net.minecraft.util.math.intprovider.IntProvider;
+import net.minecraft.util.valueproviders.ConstantInt;
+import net.minecraft.util.valueproviders.IntProvider;
+import net.minecraft.util.valueproviders.IntProviders;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.common.config.WaitingLobbyConfig;
 import xyz.nucleoid.plasmid.api.game.stats.GameStatisticBundle;
@@ -20,7 +21,7 @@ public class ElectricFloorConfig {
 			ElectricFloorMapConfig.CODEC.fieldOf("map").forGetter(ElectricFloorConfig::getMapConfig),
 			WaitingLobbyConfig.CODEC.fieldOf("players").forGetter(ElectricFloorConfig::getPlayerConfig),
 			Codec.INT.optionalFieldOf("guide_ticks", SharedConstants.TICKS_PER_SECOND * 10).forGetter(ElectricFloorConfig::getGuideTicks),
-			IntProvider.NON_NEGATIVE_CODEC.optionalFieldOf("ticks_until_close", ConstantIntProvider.create(SharedConstants.TICKS_PER_SECOND * 5)).forGetter(ElectricFloorConfig::getTicksUntilClose),
+			IntProviders.NON_NEGATIVE_CODEC.optionalFieldOf("ticks_until_close", ConstantInt.of(SharedConstants.TICKS_PER_SECOND * 5)).forGetter(ElectricFloorConfig::getTicksUntilClose),
 			Codec.INT.optionalFieldOf("spawn_platform_delay", 20 * 2).forGetter(ElectricFloorConfig::getSpawnPlatformDelay),
 			Codec.INT.optionalFieldOf("delay", 5).forGetter(ElectricFloorConfig::getDelay),
 			Codec.BOOL.optionalFieldOf("night", true).forGetter(ElectricFloorConfig::isNight),

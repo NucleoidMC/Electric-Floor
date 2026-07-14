@@ -13,15 +13,17 @@ import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.longs.Long2IntMaps;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.GameMode;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.GameType;
 import xyz.nucleoid.plasmid.api.game.GameActivity;
 import xyz.nucleoid.plasmid.api.game.GameCloseReason;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
@@ -38,20 +40,20 @@ import xyz.nucleoid.stimuli.event.EventResult;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
 public class ElectricFloorActivePhase {
-	private final ServerWorld world;
+	private final ServerLevel level;
 	private final GameSpace gameSpace;
 	private final ElectricFloorMap map;
 	private final ElectricFloorConfig config;
 	private final GameStatisticBundle statistics;
-	private final Set<ServerPlayerEntity> players = new HashSet<>();
+	private final Set<ServerPlayer> players = new HashSet<>();
 	private HolderAttachment guideText;
 	private boolean singleplayer;
 	private final Long2IntMap convertPositions = new Long2IntOpenHashMap();
 	private int timeElapsed = 0;
 	private int ticksUntilClose = -1;
 
-	public ElectricFloorActivePhase(GameSpace gameSpace, ServerWorld world, ElectricFloorMap map, ElectricFloorConfig config, HolderAttachment guideText) {
-		this.world = world;
+	public ElectricFloorActivePhase(GameSpace gameSpace, ServerLevel level, ElectricFloorMap map, ElectricFloorConfig config, HolderAttachment guideText) {
+		this.level = level;
 		this.gameSpace = gameSpace;
 		this.map = map;
 		this.config = config;
@@ -69,9 +71,9 @@ public class ElectricFloorActivePhase {
 		activity.deny(GameRuleType.PVP);
 	}
 
-	public static void open(GameSpace gameSpace, ServerWorld world, ElectricFloorMap map, ElectricFloorConfig config, HolderAttachment guideText) {
+	public static void open(GameSpace gameSpace, ServerLevel level, ElectricFloorMap map, ElectricFloorConfig config, HolderAttachment guideText) {
 		gameSpace.setActivity(activity -> {
-			ElectricFloorActivePhase phase = new ElectricFloorActivePhase(gameSpace, world, map, config, guideText);
+			ElectricFloorActivePhase phase = new ElectricFloorActivePhase(gameSpace, level, map, config, guideText);
 			gameSpace.getPlayers().participants().forEach(phase.players::add);
 
 			ElectricFloorActivePhase.setRules(activity);
@@ -92,31 +94,31 @@ public class ElectricFloorActivePhase {
 		ElectricFloorMapConfig mapConfig = this.config.getMapConfig();
 		int spawnRadius = (Math.min(mapConfig.x, mapConfig.z) - 4) / 2;
 
-		Vec3d center = this.map.getPlatform().center();
+		Vec3 center = this.map.getPlatform().center();
 
 		int index = 0;
- 		for (ServerPlayerEntity player : this.players) {
-			player.changeGameMode(GameMode.ADVENTURE);
+ 		for (ServerPlayer player : this.players) {
+			player.setGameMode(GameType.ADVENTURE);
 
 			if (!this.singleplayer && this.statistics != null) {
 				this.statistics.forPlayer(player).increment(StatisticKeys.GAMES_PLAYED, 1);
 			}
 
 			double theta = ((double) index++ / this.players.size()) * 2 * Math.PI;
-			double x = center.getX() + Math.sin(theta) * spawnRadius;
-			double z = center.getZ() + Math.cos(theta) * spawnRadius;
+			double x = center.x() + Math.sin(theta) * spawnRadius;
+			double z = center.z() + Math.cos(theta) * spawnRadius;
 
-			player.teleport(this.world, x, 1, z, Set.of(), (float) theta - 180, 0, true);
+			player.teleportTo(this.level, x, 1, z, Set.of(), (float) theta - 180, 0, true);
 
 			// Create spawn platform
-			for (BlockPos pos : BlockPos.iterate((int) x - 1, 0, (int) z - 1, (int) x, 0, (int) z)) {
-				this.setBlockState(pos, Main.SPAWN_PLATFORM.getDefaultState());
+			for (BlockPos pos : BlockPos.betweenClosed((int) x - 1, 0, (int) z - 1, (int) x, 0, (int) z)) {
+				this.setBlockState(pos, Main.SPAWN_PLATFORM.defaultBlockState());
 				this.convertPositions.putIfAbsent(pos.asLong(), this.config.getSpawnPlatformDelay());
 			}
 		}
 
-		for (ServerPlayerEntity player : this.gameSpace.getPlayers().spectators()) {
-			this.map.teleportToWaitingSpawn(player, this.world);
+		for (ServerPlayer player : this.gameSpace.getPlayers().spectators()) {
+			this.map.teleportToWaitingSpawn(player, this.level);
 			this.setSpectator(player);
 		}
 	}
@@ -141,7 +143,7 @@ public class ElectricFloorActivePhase {
 			return;
 		}
 
-		BlockPos.Mutable pos = new BlockPos.Mutable();
+		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
  		ObjectIterator<Long2IntMap.Entry> iterator = Long2IntMaps.fastIterator(this.convertPositions);
 		while (iterator.hasNext()) {
@@ -152,7 +154,7 @@ public class ElectricFloorActivePhase {
 			if (ticksLeft == 0) {
 				pos.set(convertPos);
 		
-				BlockState state = this.world.getBlockState(pos);
+				BlockState state = this.level.getBlockState(pos);
 				this.setBlockState(pos, Main.getConvertedFloor(state));
 
 				iterator.remove();
@@ -161,16 +163,16 @@ public class ElectricFloorActivePhase {
 			}
 		}
 
-		Iterator<ServerPlayerEntity> playerIterator = this.players.iterator();
+		Iterator<ServerPlayer> playerIterator = this.players.iterator();
 		while (playerIterator.hasNext()) {
-			ServerPlayerEntity player = playerIterator.next();
-			if (!this.map.getBox().contains(player.getPos())) {
+			ServerPlayer player = playerIterator.next();
+			if (!this.map.getBox().contains(player.position())) {
 				this.eliminate(player, false);
 				playerIterator.remove();
 			}
 
-			BlockPos steppingPos = player.getSteppingPos();
-			BlockState state = this.world.getBlockState(steppingPos);
+			BlockPos steppingPos = player.getOnPos();
+			BlockState state = this.level.getBlockState(steppingPos);
 
 			if (Main.isConvertible(state)) {
 				BlockState convertedState = Main.getConvertedFloor(state);
@@ -192,52 +194,52 @@ public class ElectricFloorActivePhase {
 		if (this.players.size() < 2) {
 			if (this.players.size() == 1 && this.singleplayer) return;
 			
-			ServerPlayerEntity winner = this.getWinner();
+			ServerPlayer winner = this.getWinner();
 			if (winner != null) {
 				this.applyPlayerFinishStatistics(winner, StatisticKeys.GAMES_WON);
 			}
 
 			this.gameSpace.getPlayers().sendMessage(this.getEndingMessage(winner));
-
+			this.gameSpace.getPlayers().playSound(SoundEvents.PLAYER_LEVELUP, SoundSource.UI, 1, 1);
 			this.endGame();
 		}
 	}
 
-	private ServerPlayerEntity getWinner() {
+	private ServerPlayer getWinner() {
 		if (this.players.size() == 1) {
 			return this.players.iterator().next();
 		}
 		return null;
 	}
 
-	private Text getEndingMessage(ServerPlayerEntity winner) {
+	private Component getEndingMessage(ServerPlayer winner) {
 		if (winner != null) {
-			return Text.translatable("text.electricfloor.win", winner.getDisplayName()).formatted(Formatting.GOLD);
+			return Component.translatable("text.electricfloor.win", winner.getDisplayName()).withStyle(ChatFormatting.GOLD);
 		}
-		return Text.translatable("text.electricfloor.no_winners").formatted(Formatting.GOLD);
+		return Component.translatable("text.electricfloor.no_winners").withStyle(ChatFormatting.GOLD);
 	}
 
-	private void setSpectator(ServerPlayerEntity player) {
-		player.changeGameMode(GameMode.SPECTATOR);
+	private void setSpectator(ServerPlayer player) {
+		player.setGameMode(GameType.SPECTATOR);
 	}
 
 	public JoinAcceptorResult onAcceptPlayers(JoinAcceptor acceptor) {
-		return acceptor.teleport(this.world, this.map.getSpectatorSpawnPos()).thenRunForEach(player -> {
+		return acceptor.teleport(this.level, this.map.getSpectatorSpawnPos()).thenRunForEach(player -> {
 			this.setSpectator(player);
 		});
 	}
 
-	public void removePlayer(ServerPlayerEntity player) {
+	public void removePlayer(ServerPlayer player) {
 		this.eliminate(player, true);
 	}
 
-	public void eliminate(ServerPlayerEntity eliminatedPlayer, boolean remove) {
+	public void eliminate(ServerPlayer eliminatedPlayer, boolean remove) {
 		if (this.isGameEnding()) return;
 		if (!this.players.contains(eliminatedPlayer)) return;
 
-		Text message = Text.translatable("text.electricfloor.eliminated", eliminatedPlayer.getDisplayName()).formatted(Formatting.RED);
-		for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
-			player.sendMessage(message, false);
+		Component message = Component.translatable("text.electricfloor.eliminated", eliminatedPlayer.getDisplayName()).withStyle(ChatFormatting.RED);
+		for (ServerPlayer player : this.gameSpace.getPlayers()) {
+			player.sendSystemMessage(message, false);
 		}
 
 		if (remove) {
@@ -248,20 +250,20 @@ public class ElectricFloorActivePhase {
 		this.applyPlayerFinishStatistics(eliminatedPlayer, StatisticKeys.GAMES_LOST);
 	}
 
-	public void applyPlayerFinishStatistics(ServerPlayerEntity player, StatisticKey<Integer> finishTypeKey) {
+	public void applyPlayerFinishStatistics(ServerPlayer player, StatisticKey<Integer> finishTypeKey) {
 		if (!this.singleplayer && this.statistics != null) {
 			this.statistics.forPlayer(player).increment(finishTypeKey, 1);
 			this.statistics.forPlayer(player).set(StatisticKeys.LONGEST_TIME, this.timeElapsed);
 		}
 	}
 
-	public EventResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
+	public EventResult onPlayerDeath(ServerPlayer player, DamageSource source) {
 		this.eliminate(player, true);
 		return EventResult.ALLOW;
 	}
 
 	private void endGame() {
-		this.ticksUntilClose = this.config.getTicksUntilClose().get(this.world.getRandom());
+		this.ticksUntilClose = this.config.getTicksUntilClose().sample(this.level.getRandom());
 	}
 
 	private boolean isGameEnding() {
@@ -269,12 +271,12 @@ public class ElectricFloorActivePhase {
 	}
 
 	private void setBlockState(BlockPos pos, BlockState state) {
-		this.world.setBlockState(pos, state);
+		this.level.setBlockAndUpdate(pos, state);
 
 		BlockState lightState = Main.getFloorLightState(state, this.config.isNight());
 
 		if (lightState != null) {
-			this.world.setBlockState(pos.up(), lightState);
+			this.level.setBlockAndUpdate(pos.above(), lightState);
 		}
 	}
 }

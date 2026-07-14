@@ -2,17 +2,17 @@ package io.github.haykam821.electricfloor.game.map;
 
 import io.github.haykam821.electricfloor.Main;
 import io.github.haykam821.electricfloor.game.ElectricFloorConfig;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.core.BlockPos;
 import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.map_templates.MapTemplate;
 
 public class ElectricFloorMapBuilder {
-	private static final BlockState FLOOR = Blocks.WHITE_STAINED_GLASS.getDefaultState();
-	private static final BlockState FLOOR_OUTLINE = Blocks.SMOOTH_STONE.getDefaultState();
-	private static final BlockState WALL = Blocks.STONE_BRICK_WALL.getDefaultState();
-	private static final BlockState WALL_TOP = Blocks.SMOOTH_STONE_SLAB.getDefaultState();
+	private static final BlockState FLOOR = Blocks.STAINED_GLASS.white().defaultBlockState();
+	private static final BlockState FLOOR_OUTLINE = Blocks.SMOOTH_STONE.defaultBlockState();
+	private static final BlockState WALL = Blocks.STONE_BRICK_WALL.defaultBlockState();
+	private static final BlockState WALL_TOP = Blocks.SMOOTH_STONE_SLAB.defaultBlockState();
 
 	private final ElectricFloorConfig config;
 
@@ -24,7 +24,7 @@ public class ElectricFloorMapBuilder {
 		MapTemplate template = MapTemplate.createEmpty();
 		ElectricFloorMapConfig mapConfig = this.config.getMapConfig();
 
-		BlockBounds bounds = BlockBounds.of(BlockPos.ORIGIN, new BlockPos(mapConfig.x + 1, 2, mapConfig.z + 1));
+		BlockBounds bounds = BlockBounds.of(BlockPos.ZERO, new BlockPos(mapConfig.x + 1, 2, mapConfig.z + 1));
 		this.build(bounds, template, mapConfig);
 
 		return new ElectricFloorMap(template, bounds);
@@ -50,7 +50,7 @@ public class ElectricFloorMapBuilder {
 	}
 
 	public void build(BlockBounds bounds, MapTemplate template, ElectricFloorMapConfig mapConfig) {
-		BlockPos.Mutable upPos = new BlockPos.Mutable();
+		BlockPos.MutableBlockPos upPos = new BlockPos.MutableBlockPos();
 
 		for (BlockPos pos : bounds) {
 			BlockState state = this.getBlockState(pos, bounds, mapConfig);
