@@ -2,24 +2,24 @@ package io.github.haykam821.electricfloor.game.map;
 
 import eu.pb4.polymer.virtualentity.api.ElementHolder;
 import eu.pb4.polymer.virtualentity.api.elements.TextDisplayElement;
-import net.minecraft.entity.decoration.Brightness;
-import net.minecraft.entity.decoration.DisplayEntity.BillboardMode;
-import net.minecraft.screen.ScreenTexts;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.util.Brightness;
+import net.minecraft.world.entity.Display.BillboardConstraints;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
 
 public final class ElectricFloorGuideText {	
-	private static final Formatting FORMATTING = Formatting.GOLD;
+	private static final ChatFormatting FORMATTING = ChatFormatting.GOLD;
 
-	private static final Text TEXT = Text.empty()
-		.append(Text.translatable("gameType.electricfloor.electric_floor").formatted(Formatting.BOLD))
-		.append(ScreenTexts.LINE_BREAK)
-		.append(Text.translatable("text.electricfloor.guide.keep_moving"))
-		.append(ScreenTexts.LINE_BREAK)
-		.append(Text.translatable("text.electricfloor.guide.red_eliminates"))
-		.append(ScreenTexts.LINE_BREAK)
-		.append(Text.translatable("text.electricfloor.guide.last_player_standing"))
-		.formatted(FORMATTING);
+	private static final Component TEXT = Component.empty()
+		.append(Component.translatable("gameType.electricfloor.electric_floor").withStyle(ChatFormatting.BOLD))
+		.append(CommonComponents.NEW_LINE)
+		.append(Component.translatable("text.electricfloor.guide.keep_moving"))
+		.append(CommonComponents.NEW_LINE)
+		.append(Component.translatable("text.electricfloor.guide.red_eliminates"))
+		.append(CommonComponents.NEW_LINE)
+		.append(Component.translatable("text.electricfloor.guide.last_player_standing"))
+		.withStyle(FORMATTING);
 
 	private ElectricFloorGuideText() {
 		return;
@@ -28,12 +28,12 @@ public final class ElectricFloorGuideText {
 	public static ElementHolder createElementHolder(boolean night) {
 		TextDisplayElement element = new TextDisplayElement(TEXT);
 
-		element.setBillboardMode(BillboardMode.CENTER);
+		element.setBillboardMode(BillboardConstraints.CENTER);
 		element.setLineWidth(350);
 		element.setInvisible(true);
 
 		if (night) {
-			element.setBrightness(Brightness.FULL);
+			element.setBrightness(Brightness.FULL_BRIGHT);
 		}
 
 		ElementHolder holder = new ElementHolder();
